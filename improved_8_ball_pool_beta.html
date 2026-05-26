@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>8 Ball Pool Beta Plus</title>
+<style>
+*{box-sizing:border-box;user-select:none}
+:root{--panel:rgba(12,18,55,.86);--line:rgba(255,255,255,.82);--gold:#ffdf46;--orange:#ff7b00}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 20% 10%,rgba(255,255,255,.18),transparent 22%),radial-gradient(circle at 80% 20%,rgba(255,190,70,.2),transparent 24%),linear-gradient(135deg,#1d87c9,#172a77 65%,#17123f);font-family:"Trebuchet MS",Arial,sans-serif;color:white;overflow:hidden}
+.wrap{width:min(96vw,1160px);position:relative}
+.hud{display:none;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;padding:12px 14px;background:rgba(16,20,52,.78);border:4px solid var(--line);border-radius:24px;box-shadow:0 14px 0 rgba(0,0,0,.22),0 24px 50px rgba(0,0,0,.32)}
+.title{font-size:24px;font-weight:900;text-shadow:0 4px 0 rgba(0,0,0,.28)}
+.status{font-size:14px;text-align:center;flex:1;font-weight:900;line-height:1.25}.pill{padding:8px 12px;border-radius:999px;background:rgba(0,0,0,.28);border:2px solid rgba(255,255,255,.35);font-size:12px;font-weight:900;white-space:nowrap}
+button{border:0;border-radius:999px;padding:12px 18px;font-weight:900;cursor:pointer;color:white;background:linear-gradient(180deg,#ffca38,var(--orange));box-shadow:0 7px 0 #9a4300,0 11px 20px rgba(0,0,0,.3);text-shadow:0 2px 0 rgba(0,0,0,.25);transform:translateY(0);transition:.08s ease;font-family:inherit}
+button:hover{transform:translateY(-2px);filter:brightness(1.07)}button:active{transform:translateY(4px);box-shadow:0 3px 0 #9a4300,0 7px 16px rgba(0,0,0,.28)}button.blue{background:linear-gradient(180deg,#6fe3ff,#1285ff);box-shadow:0 7px 0 #07539f,0 11px 20px rgba(0,0,0,.3)}button.dark{background:linear-gradient(180deg,#58617e,#232940);box-shadow:0 7px 0 #101523,0 11px 20px rgba(0,0,0,.3)}button.red{background:linear-gradient(180deg,#ff7676,#d51f1f);box-shadow:0 7px 0 #7e0d0d,0 11px 20px rgba(0,0,0,.3)}
+input,select{width:100%;border:4px solid rgba(255,255,255,.75);border-radius:18px;padding:13px 15px;background:rgba(255,255,255,.94);font-family:inherit;font-weight:900;font-size:16px;color:#162055;outline:none;box-shadow:0 6px 0 rgba(0,0,0,.2)}
+canvas{display:none;width:100%;height:auto;border-radius:30px;box-shadow:0 18px 0 rgba(0,0,0,.2),0 40px 90px rgba(0,0,0,.55);cursor:crosshair;border:5px solid rgba(255,255,255,.85)}
+.hint{display:none;margin-top:12px;text-align:center;opacity:.94;font-size:14px;font-weight:900;text-shadow:0 3px 0 rgba(0,0,0,.2)}
+.screen{min-height:640px;padding:36px;display:flex;align-items:center;justify-content:center;border-radius:34px;background:radial-gradient(circle at 28% 22%,rgba(255,255,255,.16),transparent 18%),linear-gradient(180deg,rgba(255,255,255,.18),rgba(0,0,0,.18));border:5px solid var(--line);box-shadow:0 18px 0 rgba(0,0,0,.22),0 34px 90px rgba(0,0,0,.42);position:relative;overflow:hidden}.screen:before,.screen:after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.12);pointer-events:none}.screen:before{width:180px;height:180px;left:-40px;top:-40px}.screen:after{width:250px;height:250px;right:-80px;bottom:-80px}
+.menu-card,.beta-card{width:min(720px,94%);text-align:center;padding:34px;border-radius:34px;background:var(--panel);border:5px solid rgba(255,255,255,.86);box-shadow:0 14px 0 rgba(0,0,0,.25),inset 0 0 0 2px rgba(255,255,255,.12);z-index:1}.logo{font-size:clamp(44px,7vw,84px);margin:0 0 6px;font-weight:1000;letter-spacing:-2px;text-shadow:0 7px 0 #152066,0 11px 0 rgba(0,0,0,.3)}.sub{margin:0 0 22px;font-weight:900;color:var(--gold);text-shadow:0 3px 0 rgba(0,0,0,.25)}.menu-buttons{display:grid;gap:18px;margin:24px auto 0;max-width:430px}.big-btn{font-size:22px;padding:18px 22px}.beta-title{font-size:clamp(36px,6vw,66px);margin:0;font-weight:1000;color:var(--gold);text-shadow:0 6px 0 #914300,0 10px 0 rgba(0,0,0,.3)}.beta-text{font-size:18px;line-height:1.45;font-weight:800;margin:18px 0 28px}.room-card{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:18px;background:rgba(255,255,255,.12);border:3px solid rgba(255,255,255,.35);font-weight:900}.room-card span{font-size:15px;text-align:left}.room-card small{display:block;color:#ffe36e;font-size:11px}
+.spin-panel,.mini-panel,.floating-admin{display:none;position:absolute;background:rgba(14,18,54,.84);border:4px solid rgba(255,255,255,.82);border-radius:22px;box-shadow:0 10px 0 rgba(0,0,0,.22),0 18px 35px rgba(0,0,0,.3);text-align:center;font-weight:900}.spin-panel{left:18px;bottom:58px;width:132px;padding:10px}.mini-panel{right:18px;bottom:58px;width:174px;padding:10px;font-size:12px}.floating-admin{left:28px;top:92px;width:255px;padding:10px;z-index:20;text-align:left}.drag-head{cursor:move;padding:8px 10px;margin:-2px -2px 8px;border-radius:16px;background:rgba(255,255,255,.15);font-size:13px;text-align:center}.admin-mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.admin-mini-grid button{font-size:11px;padding:9px 8px}.admin-small{font-size:11px;line-height:1.25;opacity:.9;text-align:center;margin:7px 2px 0}.tutorial-list{text-align:left;display:grid;gap:10px;margin:18px auto 0;max-width:560px;font-weight:900;line-height:1.35}.tutorial-list div{padding:12px 14px;border-radius:18px;background:rgba(255,255,255,.12);border:3px solid rgba(255,255,255,.28)}
+.spin-ball{width:92px;height:92px;margin:8px auto 4px;border-radius:50%;background:radial-gradient(circle at 35% 28%,#fff,#e9e9e1 65%,#cacac4);border:3px solid rgba(0,0,0,.2);position:relative;cursor:pointer}.spin-ball:before{content:"";position:absolute;left:50%;top:0;width:2px;height:100%;background:rgba(0,0,0,.12)}.spin-ball:after{content:"";position:absolute;left:0;top:50%;width:100%;height:2px;background:rgba(0,0,0,.12)}.spin-dot{width:17px;height:17px;background:#ff4242;border:3px solid white;border-radius:50%;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 3px 0 rgba(0,0,0,.25);z-index:2}.spin-label{font-size:12px;opacity:.95}.show-game .hud,.show-game .spin-panel,.show-game .mini-panel{display:flex}.show-game .spin-panel,.show-game .mini-panel{display:block}.show-game .floating-admin.unlocked{display:block}.show-game canvas,.show-game .hint{display:block}.show-game .screen{display:none}.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:560px;margin:0 auto}.admin-grid button,.admin-grid select{font-size:14px;padding:12px}.scoreline{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px auto;max-width:430px}.scorebox{padding:12px;border-radius:18px;background:rgba(255,255,255,.12);border:3px solid rgba(255,255,255,.35);font-weight:900}.toast{position:absolute;left:50%;top:86px;transform:translateX(-50%);padding:12px 18px;border-radius:999px;background:rgba(8,12,38,.88);border:3px solid rgba(255,255,255,.7);box-shadow:0 8px 0 rgba(0,0,0,.22);font-weight:1000;opacity:0;pointer-events:none;z-index:40;transition:.18s}.toast.show{opacity:1;top:104px}.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px auto 0;max-width:560px}.settings-grid label{text-align:left;font-weight:900}.settings-grid span{display:block;margin:0 0 5px;color:#ffe36e;font-size:13px}.badge-row{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px auto}.badge{padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.13);border:2px solid rgba(255,255,255,.32);font-size:12px;font-weight:900}.flash{animation:flashPop .35s ease}@keyframes flashPop{0%{transform:scale(1)}45%{transform:scale(1.045)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <div class="screen" id="bootScreen"><div class="beta-card"><h1 class="beta-title">BETA WARNING</h1><p class="beta-text">This is an upgraded beta build. The shots are more accurate, fouls are stricter, and the guide now predicts the actual ball path before you shoot.</p><button class="big-btn" onclick="showMenu()">I Understand</button></div></div>
+
+  <div class="screen" id="menuScreen" style="display:none"><div class="menu-card"><h1 class="logo">8 BALL<br>POOL</h1><p class="sub" id="menuSub">Beta Plus Edition</p><div class="scoreline"><div class="scorebox" id="scoreP1">P1 Wins: 0</div><div class="scorebox" id="scoreP2">P2 Wins: 0</div></div><div class="menu-buttons"><button class="big-btn blue" onclick="showLocalRooms()">Local Rooms</button><button class="big-btn" onclick="startPractice()">Practice</button><button class="big-btn dark" onclick="showTutorial()">Tutorial</button><button class="big-btn blue" onclick="showSettings()">Settings</button><button class="big-btn dark" onclick="toggleMenuMusic()" id="musicBtn">Menu Music: On</button></div></div></div>
+
+  <div class="screen" id="onlineScreen" style="display:none"><div class="menu-card"><h1 class="logo">LOCAL<br>ROOMS</h1><p class="sub" id="roomSub">Create, search or join a local room</p><p class="beta-text">Local rooms are pass-and-play tables on this device. Passwords only lock the local room.</p><div style="display:grid;gap:10px;max-width:420px;margin:0 auto 14px"><input id="roomSearch" placeholder="Search rooms" oninput="renderRooms()"><input id="newRoomName" placeholder="New room name"><input id="newRoomPass" type="password" placeholder="Room password optional"><button class="big-btn blue" onclick="createRoom()">Create Room</button></div><div id="roomList" style="display:grid;gap:10px;max-width:460px;margin:0 auto 18px"></div><div class="menu-buttons"><button class="big-btn" onclick="backToMainMenu()">Back</button></div></div></div>
+
+  <div class="screen" id="tutorialScreen" style="display:none"><div class="menu-card"><h1 class="logo">HOW TO<br>PLAY</h1><p class="sub">Quick tutorial</p><div class="tutorial-list"><div><b>1. Aim:</b> Move your mouse around the white ball. The normal guide only gives a simple first-contact guide, so players still need skill.</div><div><b>2. Power:</b> Hold click to charge. Release to shoot. Shot strength affects guide length and sound.</div><div><b>3. Spin:</b> Use the hit-point panel in the bottom-left. Top spin follows through. Bottom spin pulls back. Side spin bends the cue ball after contact.</div><div><b>4. Fouls:</b> You must hit the correct ball first. After contact, a ball must pot or hit a cushion. Fouls give ball in hand.</div><div><b>5. Admin:</b> Press F2 to unlock hidden tools. Admin can enable full trajectory mode, which shows every moving ball path.</div><div><b>6. Polish:</b> There are combo messages, match scores, adjustable difficulty, screen shake, shot timer and visual effects.</div></div><div class="menu-buttons"><button class="big-btn blue" onclick="startPractice()">Try Practice</button><button class="big-btn" onclick="backToMainMenuFromTutorial()">Back</button></div></div></div>
+
+  <div class="screen" id="settingsScreen" style="display:none"><div class="menu-card"><h1 class="logo">SETTINGS</h1><p class="sub">Tune the table</p><div class="settings-grid"><label><span>Table Speed</span><select id="speedSelect" onchange="applySettingChanges()"><option value="slow">Slow</option><option value="normal" selected>Normal</option><option value="fast">Fast</option></select></label><label><span>Shot Timer</span><select id="timerSelect" onchange="applySettingChanges()"><option value="off">Off</option><option value="30">30 seconds</option><option value="45" selected>45 seconds</option><option value="60">60 seconds</option></select></label><label><span>Effects</span><select id="effectsSelect" onchange="applySettingChanges()"><option value="on" selected>On</option><option value="off">Off</option></select></label><label><span>Guide Style</span><select id="guideSelect" onchange="applySettingChanges()"><option value="fair" selected>Fair</option><option value="minimal">Minimal</option></select></label></div><div class="badge-row"><div class="badge" id="settingSpeedBadge">Speed: Normal</div><div class="badge" id="settingTimerBadge">Timer: 45s</div><div class="badge" id="settingEffectsBadge">Effects: On</div></div><div class="menu-buttons"><button class="big-btn blue" onclick="startPractice()">Test Settings</button><button class="big-btn" onclick="backToMainMenuFromSettings()">Back</button></div></div></div>
+
+  <div class="screen" id="adminScreen" style="display:none"><div class="menu-card"><h1 class="logo">ADMIN</h1><p class="sub" id="adminSub">Enter admin password</p><div id="adminLogin" style="display:grid;gap:12px;max-width:360px;margin:0 auto"><input id="adminPassword" type="password" placeholder="Password"><button class="big-btn blue" onclick="adminLogin()">Unlock</button><button class="big-btn" onclick="closeAdmin()">Close</button></div><div id="adminPanel" style="display:none"><div class="admin-grid"><button class="blue" onclick="adminToggleGuides()">Toggle Guides</button><button class="blue" onclick="adminToggleMusic()">Toggle Music</button><button class="blue" onclick="adminGiveBallInHand()">Ball In Hand</button><button class="blue" onclick="adminForceTurn()">Swap Turn</button><button class="blue" onclick="adminRespawnCue()">Respawn Cue</button><button class="blue" onclick="adminResetScores()">Reset Scores</button><button class="blue" onclick="adminClearRooms()">Reset Rooms</button><button class="red" onclick="resetGame()">Reset Table</button><select id="adminGroupSelect" onchange="adminSetGroups(this.value)"><option value="open">Teams: Open</option><option value="p1solids">P1 Solids</option><option value="p1stripes">P1 Stripes</option></select><button onclick="closeAdmin()">Close</button></div></div></div></div>
+
+  <div class="hud"><div class="title">8 Ball Pool</div><div class="pill" id="turnPill">P1 Turn</div><div class="pill" id="teamPill">Teams: Open</div><div class="pill" id="timerPill">45</div><div class="status" id="status">Move the white ball, then shoot.</div><button onclick="backToMenu()">Menu</button><button onclick="resetGame()">Reset</button></div>
+  <canvas id="game" width="1000" height="560"></canvas>
+  <div class="spin-panel" id="spinPanel"><div class="drag-head" id="spinDrag">Hit Point</div><div class="spin-ball" id="spinBall"><div class="spin-dot" id="spinDot"></div></div><div class="spin-label" id="spinLabel">Centre</div><button style="padding:7px 10px;font-size:11px;margin-top:7px" onclick="resetSpin()">Centre</button></div>
+  <div class="mini-panel"><div id="rulesBox">Legal shot needs correct first hit, then pot or rail contact.</div></div>
+  <div class="floating-admin" id="floatingAdmin"><div class="drag-head" id="adminDrag">ADMIN TOOLS • drag me</div><div class="admin-mini-grid"><button class="blue" onclick="adminToggleGuides()">Player Guide</button><button class="blue" onclick="adminToggleProTraj()">Pro Traj</button><button class="blue" onclick="adminGiveBallInHand()">Ball In Hand</button><button class="blue" onclick="adminForceTurn()">Swap Turn</button><button class="blue" onclick="adminRespawnCue()">Respawn Cue</button><button class="blue" onclick="adminSetGroups('open')">Open Teams</button><button class="blue" onclick="adminToggleTimer()">Timer</button><button class="blue" onclick="adminToggleChaos()">Chaos</button><button class="blue" onclick="adminPocketAssist()">Pocket Assist</button><button class="red" onclick="resetGame()">Reset Table</button><button onclick="hideFloatingAdmin()">Hide</button></div><div class="admin-small" id="adminMiniStatus">F2 opens admin. Pro Traj shows every ball path.</div></div>
+  <div class="toast" id="toast">Nice shot</div>
+  <div class="hint">Hold to charge. Normal guide is fair. Admin Pro Traj shows full predicted paths.</div>
+</div>
+
+<script>
+'use strict';
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+const statusEl=document.getElementById('status');
+const wrap=document.getElementById('wrap');
+const bootScreen=document.getElementById('bootScreen');
+const menuScreen=document.getElementById('menuScreen');
+const onlineScreen=document.getElementById('onlineScreen');
+const tutorialScreen=document.getElementById('tutorialScreen');
+const settingsScreen=document.getElementById('settingsScreen');
+const adminScreen=document.getElementById('adminScreen');
+const floatingAdmin=document.getElementById('floatingAdmin');
+const spinPanel=document.getElementById('spinPanel');
+const spinBall=document.getElementById('spinBall');
+const spinDot=document.getElementById('spinDot');
+const spinLabel=document.getElementById('spinLabel');
+const turnPill=document.getElementById('turnPill');
+const teamPill=document.getElementById('teamPill');
+const timerPill=document.getElementById('timerPill');
+const scoreP1=document.getElementById('scoreP1');
+const scoreP2=document.getElementById('scoreP2');
+const musicBtn=document.getElementById('musicBtn');
+const toast=document.getElementById('toast');
+
+const W=1000,H=560,rail=55,BALL_R=13,POCKET_R=28,MIN_SPEED=.028,POWER_MAX=30,CUSHION_RESTITUTION=.88,BALL_RESTITUTION=.97;
+const table={x:rail,y:rail,w:W-rail*2,h:H-rail*2};
+const ADMIN_PASS='Carsarecool';
+const pockets=[{x:table.x,y:table.y},{x:table.x+table.w/2,y:table.y-2},{x:table.x+table.w,y:table.y},{x:table.x,y:table.y+table.h},{x:table.x+table.w/2,y:table.y+table.h+2},{x:table.x+table.w,y:table.y+table.h}];
+const colours={0:'#f7f7f2',1:'#f7d23e',2:'#1e63d6',3:'#d82929',4:'#7c32c8',5:'#f37021',6:'#1d9a57',7:'#7d2c17',8:'#111',9:'#f7d23e',10:'#1e63d6',11:'#d82929',12:'#7c32c8',13:'#f37021',14:'#1d9a57',15:'#7d2c17'};
+const groupOf=n=>n>=1&&n<=7?'solids':n>=9&&n<=15?'stripes':n===8?'black':'cue';
+
+let FRICTION=.986;
+let balls=[];
+let mouse={x:table.x+table.w*.25,y:table.y+table.h/2,down:false,start:0,power:0};
+let gameOver=false,messageTimer=0,spin={x:0,y:0},dragCue=false;
+let currentPlayer=1,groups={1:null,2:null},ballInHand=false,breakShot=true,shotActive=false,currentRoom='Room 1';
+let shotTimer=45,shotTimerMax=45,timerEnabled=true;
+let settings={speed:'normal',timer:'45',effects:'on',guide:'fair'};
+let particles=[],shake=0,combo=0,chaosMode=false,lastTick=performance.now();
+let aimGuidesOn=true,proTrajectoryOn=false,adminUnlocked=false,menuMusicOn=true,audioReady=false,audioCtx=null,masterGain=null,musicTimer=null;
+let scores=safeLoad('eightBallScores',{1:0,2:0});
+let rooms=safeLoad('eightBallLocalRooms',[{name:'Room 1',pass:''},{name:'Room 2',pass:''},{name:'Practice Table',pass:''}]);
+let shot={potted:[],firstHit:null,cuePotted:false,railAfterHit:false,anyRail:false,contactMade:false,spinUsed:false};
+
+function safeLoad(key,fallback){try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch{return fallback}}
+function safeSave(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch{}}
+
+class Ball{
+  constructor(num,x,y){this.num=num;this.x=x;this.y=y;this.vx=0;this.vy=0;this.r=BALL_R;this.potted=false;this.railTouched=false}
+  update(){
+    if(this.potted)return;
+    this.x+=this.vx;this.y+=this.vy;this.vx*=FRICTION;this.vy*=FRICTION;
+    if(Math.hypot(this.vx,this.vy)<MIN_SPEED){this.vx=0;this.vy=0}
+    let hitRail=false;
+    const l=table.x+this.r,r=table.x+table.w-this.r,t=table.y+this.r,b=table.y+table.h-this.r;
+    if(this.x<l){this.x=l;this.vx*=-CUSHION_RESTITUTION;hitRail=true}
+    if(this.x>r){this.x=r;this.vx*=-CUSHION_RESTITUTION;hitRail=true}
+    if(this.y<t){this.y=t;this.vy*=-CUSHION_RESTITUTION;hitRail=true}
+    if(this.y>b){this.y=b;this.vy*=-CUSHION_RESTITUTION;hitRail=true}
+    if(hitRail){this.railTouched=true;if(shotActive){shot.anyRail=true;if(shot.contactMade)shot.railAfterHit=true}playSound('rail',.07)}
+    for(const p of pockets){if(Math.hypot(this.x-p.x,this.y-p.y)<POCKET_R-3)potBall(this)}
+  }
+  draw(){
+    if(this.potted)return;
+    ctx.save();
+    ctx.beginPath();ctx.arc(this.x+3,this.y+5,this.r,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,.28)';ctx.fill();
+    ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fillStyle=colours[this.num];ctx.fill();ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.6)';ctx.stroke();
+    ctx.beginPath();ctx.arc(this.x-4,this.y-5,3.5,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.55)';ctx.fill();
+    if(this.num>=9&&this.num<=15){ctx.beginPath();ctx.arc(this.x,this.y,this.r*.72,0,Math.PI*2);ctx.fillStyle='white';ctx.fill()}
+    if(this.num!==0){ctx.beginPath();ctx.arc(this.x,this.y,6.7,0,Math.PI*2);ctx.fillStyle='white';ctx.fill();ctx.fillStyle=this.num===8?'white':'#111';ctx.font='900 9px Trebuchet MS';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(this.num,this.x,this.y+.5)}
+    ctx.restore();
+  }
+  moving(){return Math.abs(this.vx)>0||Math.abs(this.vy)>0}
+}
+
+function hideAllScreens(){bootScreen.style.display='none';menuScreen.style.display='none';onlineScreen.style.display='none';tutorialScreen.style.display='none';settingsScreen.style.display='none';adminScreen.style.display='none'}
+function showMenu(){initAudio();startMenuMusic();playSound('button');hideAllScreens();menuScreen.style.display='flex';updateScores()}
+function backToMainMenu(){playSound('button');hideAllScreens();menuScreen.style.display='flex';startMenuMusic()}
+function showTutorial(){initAudio();playSound('button');hideAllScreens();tutorialScreen.style.display='flex'}
+function backToMainMenuFromTutorial(){backToMainMenu()}
+function showSettings(){initAudio();playSound('button');hideAllScreens();settingsScreen.style.display='flex';syncSettingsUi()}
+function backToMainMenuFromSettings(){backToMainMenu()}
+function showLocalRooms(){initAudio();startMenuMusic();playSound('button');hideAllScreens();onlineScreen.style.display='flex';renderRooms()}
+function startPractice(){startLocalRoom('Practice Table',true)}
+function startLocalRoom(roomName,practice=false){currentRoom=roomName;initAudio();stopMenuMusic();playSound('start');hideAllScreens();wrap.classList.add('show-game');resetGame();if(practice){ballInHand=true;setStatus('Practice started. Drag the white ball anywhere legal, then shoot.')}else{setStatus(roomName+' started. P1 breaks from the fixed start position.')}showToast('Rack loaded');updateHud()}
+function backToMenu(){playSound('button');wrap.classList.remove('show-game');hideAllScreens();menuScreen.style.display='flex';startMenuMusic();updateScores()}
+
+function saveRooms(){safeSave('eightBallLocalRooms',rooms)}
+function renderRooms(){const list=document.getElementById('roomList'),q=(document.getElementById('roomSearch')?.value||'').toLowerCase();if(!list)return;list.innerHTML='';rooms.filter(r=>r.name.toLowerCase().includes(q)).forEach((r,i)=>{const card=document.createElement('div');card.className='room-card';card.innerHTML='<span>'+escapeHtml(r.name)+'<small>'+(r.pass?'Password locked':'Open room')+'</small></span><button onclick="joinRoom('+i+')">Join</button>';list.appendChild(card)});if(!list.innerHTML)list.innerHTML='<div class="room-card"><span>No rooms found<small>Create one above</small></span></div>'}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function createRoom(){const name=document.getElementById('newRoomName').value.trim(),pass=document.getElementById('newRoomPass').value;if(!name){document.getElementById('roomSub').textContent='Room needs a name.';playSound('bad');return}if(rooms.some(r=>r.name.toLowerCase()===name.toLowerCase())){document.getElementById('roomSub').textContent='That room already exists.';playSound('bad');return}rooms.push({name,pass});saveRooms();document.getElementById('newRoomName').value='';document.getElementById('newRoomPass').value='';document.getElementById('roomSub').textContent='Room created.';playSound('button');renderRooms()}
+function joinRoom(i){const r=rooms[i];if(!r)return;if(r.pass){const entered=prompt('Password for '+r.name);if(entered!==r.pass){document.getElementById('roomSub').textContent='Wrong room password.';playSound('bad');return}}startLocalRoom(r.name,false)}
+
+function openAdmin(){initAudio();playSound('button');wrap.classList.remove('show-game');hideAllScreens();adminScreen.style.display='flex';document.getElementById('adminLogin').style.display='grid';document.getElementById('adminPanel').style.display='none';document.getElementById('adminPassword').value='';document.getElementById('adminSub').textContent='Enter admin password';setTimeout(()=>document.getElementById('adminPassword').focus(),50)}
+function closeAdmin(){playSound('button');adminScreen.style.display='none';if(balls.length){wrap.classList.add('show-game');stopMenuMusic()}else{menuScreen.style.display='flex';startMenuMusic()}}
+function adminLogin(){const p=document.getElementById('adminPassword').value;if(p===ADMIN_PASS){adminUnlocked=true;playSound('start');document.getElementById('adminLogin').style.display='none';document.getElementById('adminPanel').style.display='block';document.getElementById('adminSub').textContent='Admin unlocked';floatingAdmin.classList.add('unlocked')}else{playSound('bad');document.getElementById('adminSub').textContent='Wrong password'}}
+function adminToggleGuides(){aimGuidesOn=!aimGuidesOn;playSound('button');setAdminMessage('Player guide '+(aimGuidesOn?'on':'off'))}
+function adminToggleProTraj(){if(!adminUnlocked){setStatus('Admin locked. Press F2 and enter password.');playSound('bad');return}proTrajectoryOn=!proTrajectoryOn;playSound('button');setAdminMessage('Pro trajectory '+(proTrajectoryOn?'on':'off'))}
+function adminToggleTimer(){timerEnabled=!timerEnabled;playSound('button');showToast('Timer '+(timerEnabled?'on':'off'));updateHud()}
+function adminToggleChaos(){chaosMode=!chaosMode;playSound('button');showToast('Chaos '+(chaosMode?'on':'off'))}
+function adminPocketAssist(){for(const b of balls){if(!b.potted&&b.num!==0){let nearest=pockets[0],best=Infinity;for(const p of pockets){const d=Math.hypot(b.x-p.x,b.y-p.y);if(d<best){best=d;nearest=p}}if(best>0){b.vx+=(nearest.x-b.x)/best*.55;b.vy+=(nearest.y-b.y)/best*.55}}}showToast('Pocket assist');playSound('button')}
+function hideFloatingAdmin(){floatingAdmin.classList.remove('unlocked');playSound('button')}
+function adminToggleMusic(){toggleMenuMusic();setAdminMessage('Menu music '+(menuMusicOn?'on':'off'))}
+function adminClearRooms(){rooms=[{name:'Room 1',pass:''},{name:'Room 2',pass:''},{name:'Practice Table',pass:''}];saveRooms();renderRooms();playSound('button');setAdminMessage('Local rooms reset')}
+function adminGiveBallInHand(){ballInHand=true;respotCueBall();setStatus('Admin gave ball in hand.');playSound('button');closeAdmin();updateHud()}
+function adminForceTurn(){currentPlayer=currentPlayer===1?2:1;shotTimer=shotTimerMax;setStatus('Admin changed turn to P'+currentPlayer+'.');playSound('button');updateHud()}
+function adminRespawnCue(){respotCueBall();ballInHand=true;setStatus('Cue ball respawned. Ball in hand.');playSound('button');updateHud()}
+function adminResetScores(){scores={1:0,2:0};updateScores();setAdminMessage('Scores reset');playSound('button')}
+function adminSetGroups(v){if(v==='open'){groups={1:null,2:null}}else if(v==='p1solids'){groups={1:'solids',2:'stripes'}}else if(v==='p1stripes'){groups={1:'stripes',2:'solids'}}updateHud();playSound('button')}
+function setAdminMessage(msg){document.getElementById('adminSub').textContent=msg;document.getElementById('adminMiniStatus').textContent=msg}
+window.addEventListener('keydown',e=>{if(e.key==='F2'){e.preventDefault();openAdmin()}if(e.key==='Escape'&&adminScreen.style.display==='flex')closeAdmin()});
+
+function initAudio(){if(audioReady)return;audioCtx=new(window.AudioContext||window.webkitAudioContext)();masterGain=audioCtx.createGain();masterGain.gain.value=.18;masterGain.connect(audioCtx.destination);audioReady=true}
+function playSound(type,volume=.35){if(!audioReady||!audioCtx)return;const now=audioCtx.currentTime,osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.connect(gain);gain.connect(audioCtx.destination);let freq=300,dur=.08,wave='sine';if(type==='hit'){freq=180;dur=.07;wave='square'}if(type==='collide'){freq=420;dur=.035;wave='triangle';volume=.12}if(type==='rail'){freq=130;dur=.035;wave='sawtooth';volume=.06}if(type==='pot'){freq=110;dur=.16}if(type==='button'){freq=520;dur=.06;wave='triangle'}if(type==='start'){freq=660;dur=.12;wave='triangle'}if(type==='bad'){freq=90;dur=.18;wave='sawtooth';volume=.22}osc.type=wave;osc.frequency.setValueAtTime(freq,now);if(type==='pot')osc.frequency.exponentialRampToValueAtTime(70,now+dur);if(type==='start')osc.frequency.exponentialRampToValueAtTime(880,now+dur);gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(volume,now+.01);gain.gain.exponentialRampToValueAtTime(.0001,now+dur);osc.start(now);osc.stop(now+dur+.02)}
+function startMenuMusic(){if(!audioReady||!menuMusicOn||musicTimer)return;let notes=[261.63,329.63,392,523.25,392,329.63],i=0;musicTimer=setInterval(()=>{if(!menuMusicOn||wrap.classList.contains('show-game'))return;const now=audioCtx.currentTime,osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.type='triangle';osc.frequency.value=notes[i++%notes.length];osc.connect(gain);gain.connect(masterGain);gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.22,now+.015);gain.gain.exponentialRampToValueAtTime(.0001,now+.32);osc.start(now);osc.stop(now+.35)},380)}
+function stopMenuMusic(){if(musicTimer){clearInterval(musicTimer);musicTimer=null}}
+function toggleMenuMusic(){initAudio();menuMusicOn=!menuMusicOn;musicBtn.textContent='Menu Music: '+(menuMusicOn?'On':'Off');if(menuMusicOn)startMenuMusic();else stopMenuMusic();playSound('button')}
+
+function resetGame(){
+  balls=[];gameOver=false;currentPlayer=1;groups={1:null,2:null};ballInHand=false;breakShot=true;shotActive=false;dragCue=false;combo=0;shotTimer=shotTimerMax;particles=[];resetSpin(false);setStatus('P1 breaks. No ball-in-hand at the start.');
+  balls.push(new Ball(0,table.x+table.w*.25,table.y+table.h/2));
+  const rackX=table.x+table.w*.68,rackY=table.y+table.h/2,order=[1,9,2,10,8,3,11,4,12,5,13,6,14,7,15];let index=0;
+  for(let row=0;row<5;row++){for(let col=0;col<=row;col++){balls.push(new Ball(order[index++],rackX+row*BALL_R*1.78,rackY+(col-row/2)*BALL_R*2.08))}}
+  updateHud();updateScores();
+}
+function setStatus(text){statusEl.textContent=text;messageTimer=210}
+function updateHud(){turnPill.textContent=gameOver?'Game Over':'P'+currentPlayer+' Turn';const a=groups[1]?('P1 '+groups[1]):'P1 open',b=groups[2]?('P2 '+groups[2]):'P2 open';teamPill.textContent=currentRoom+' | '+a+' | '+b;timerPill.textContent=timerEnabled?Math.ceil(shotTimer):'∞';document.getElementById('rulesBox').textContent=ballInHand?'Ball in hand. Place white ball legally.':'Legal shot: correct first hit, then pot or rail contact.'}
+function updateScores(){scoreP1.textContent='P1 Wins: '+scores[1];scoreP2.textContent='P2 Wins: '+scores[2];safeSave('eightBallScores',scores)}
+function getCueBall(){return balls.find(b=>b.num===0)}
+function allStopped(){return balls.every(b=>!b.moving())}
+function legalCuePosition(x,y){if(x<table.x+BALL_R||x>table.x+table.w-BALL_R||y<table.y+BALL_R||y>table.y+table.h-BALL_R)return false;return balls.every(b=>b.num===0||b.potted||Math.hypot(x-b.x,y-b.y)>BALL_R*2+1)}
+function potBall(ball){if(ball.potted)return;ball.potted=true;ball.vx=0;ball.vy=0;playSound('pot',.3);burst(ball.x,ball.y,ball.num===0?'white':colours[ball.num]);shake=Math.max(shake,settings.effects==='on'?4:0);if(shotActive){shot.potted.push(ball.num);if(ball.num===0)shot.cuePotted=true}if(ball.num===0){setStatus('Foul. White ball potted. Ball in hand.');showToast('Cue ball scratched')}else if(ball.num===8){setStatus('Black 8 potted. Checking rules...');showToast('Black potted')}else{combo++;setStatus('Nice pot. Ball '+ball.num+' is gone.');showToast(combo>1?'Combo x'+combo:'Nice pot')}}
+function respotCueBall(){const cue=getCueBall();if(!cue)return;cue.potted=false;cue.x=table.x+table.w*.25;cue.y=table.y+table.h/2;let tries=0;while(!legalCuePosition(cue.x,cue.y)&&tries++<80)cue.y+=BALL_R*2;if(!legalCuePosition(cue.x,cue.y)){cue.x=table.x+table.w*.18;cue.y=table.y+table.h*.35}cue.vx=0;cue.vy=0}
+
+function collideBalls(){for(let i=0;i<balls.length;i++){for(let j=i+1;j<balls.length;j++){const a=balls[i],b=balls[j];if(a.potted||b.potted)continue;const dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy),min=a.r+b.r;if(dist>0&&dist<min){const nx=dx/dist,ny=dy/dist,overlap=min-dist;a.x-=nx*overlap/2;a.y-=ny*overlap/2;b.x+=nx*overlap/2;b.y+=ny*overlap/2;const rvx=b.vx-a.vx,rvy=b.vy-a.vy,velAlongNormal=rvx*nx+rvy*ny;if(velAlongNormal>0)continue;const impulse=-(1+BALL_RESTITUTION)*velAlongNormal/2;const ix=impulse*nx,iy=impulse*ny;a.vx-=ix;a.vy-=iy;b.vx+=ix;b.vy+=iy;const impact=Math.abs(velAlongNormal);if(impact>.45)playSound('collide',Math.min(.18,impact/16));if(shotActive&&!shot.firstHit&&(a.num===0||b.num===0)){shot.firstHit=a.num===0?b.num:a.num;shot.contactMade=true;applyCueSpin(nx,ny,a.num===0?1:-1)}}}}}
+function applyCueSpin(nx,ny,sign){if(shot.spinUsed)return;shot.spinUsed=true;const cue=getCueBall();if(!cue)return;const forward=Math.max(-.9,Math.min(.9,-spin.y)),side=Math.max(-.9,Math.min(.9,spin.x)),tx=-ny,ty=nx;cue.vx+=nx*forward*2.15*sign+tx*side*1.55;cue.vy+=ny*forward*2.15*sign+ty*side*1.55}
+function evaluateShot(){
+  if(!shotActive||!allStopped())return;shotActive=false;
+  let foul=false,msg='',group=groups[currentPlayer],other=currentPlayer===1?2:1,firstGroup=groupOf(shot.firstHit),blackPotted=shot.potted.includes(8);
+  const legalBallPotted=shot.potted.some(n=>groupOf(n)==='solids'||groupOf(n)==='stripes'||n===8);
+  if(shot.cuePotted){foul=true;msg='Foul: white ball potted.'}
+  else if(!shot.firstHit){foul=true;msg='Foul: no ball hit.'}
+  else if(group&&firstGroup!==group&&!(firstGroup==='black'&&teamCleared(currentPlayer))){foul=true;msg='Foul: hit the wrong ball first.'}
+  else if(!group&&firstGroup==='black'){foul=true;msg='Foul: cannot hit black first while teams are open.'}
+  else if(!legalBallPotted&&!shot.railAfterHit){foul=true;msg='Foul: no pot and no rail after contact.'}
+  if(!groups[1]&&!groups[2]&&!foul){const firstLegalPot=shot.potted.find(n=>groupOf(n)==='solids'||groupOf(n)==='stripes');if(firstLegalPot){groups[currentPlayer]=groupOf(firstLegalPot);groups[other]=groups[currentPlayer]==='solids'?'stripes':'solids';group=groups[currentPlayer];msg='Teams set. P'+currentPlayer+' is '+group+'.';showToast('Teams assigned')}}
+  const anyOwnOrOpenPot=groups[currentPlayer]?shot.potted.some(n=>groupOf(n)===groups[currentPlayer]):shot.potted.some(n=>groupOf(n)==='solids'||groupOf(n)==='stripes');
+  if(blackPotted){if(!foul&&teamCleared(currentPlayer)){gameOver=true;scores[currentPlayer]++;msg='P'+currentPlayer+' wins. Black potted last.';showToast('P'+currentPlayer+' wins')}else{gameOver=true;scores[other]++;currentPlayer=other;msg='P'+other+' wins. Black was potted too early or illegally.';showToast('P'+other+' wins')}updateScores()}
+  if(!gameOver){if(foul){combo=0;ballInHand=true;respotCueBall();currentPlayer=other;msg=msg+' Ball in hand for P'+currentPlayer+'.';showToast('Foul')}else if(anyOwnOrOpenPot){ballInHand=false;msg=msg||'Good shot. You go again.';if(combo>=2)msg+=' Combo x'+combo+'.'}else{combo=0;currentPlayer=other;ballInHand=false;msg='No pot. P'+currentPlayer+' turn.'}breakShot=false;shotTimer=shotTimerMax;setStatus(msg)}
+  updateHud();
+}
+function teamCleared(p){const g=groups[p];if(!g)return false;return balls.every(b=>b.potted||groupOf(b.num)!==g)}
+
+function drawTable(){
+  ctx.save();
+  ctx.clearRect(0,0,W,H);
+  if(shake>0&&settings.effects==='on'){ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);shake*=.86}
+  const grad=ctx.createLinearGradient(0,0,W,H);grad.addColorStop(0,'#b66a26');grad.addColorStop(1,'#5d2d0e');ctx.fillStyle=grad;roundRect(20,20,W-40,H-40,34);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.45)';ctx.lineWidth=5;roundRect(28,28,W-56,H-56,28);ctx.stroke();
+  const felt=ctx.createLinearGradient(table.x,table.y,table.x,table.y+table.h);felt.addColorStop(0,'#13a96d');felt.addColorStop(1,'#087246');ctx.fillStyle=felt;roundRect(table.x,table.y,table.w,table.h,20);ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.14)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(table.x+table.w*.25,table.y);ctx.lineTo(table.x+table.w*.25,table.y+table.h);ctx.stroke();ctx.beginPath();ctx.arc(table.x+table.w*.25,table.y+table.h/2,74,Math.PI/2,Math.PI*1.5);ctx.stroke();
+  for(const p of pockets){ctx.beginPath();ctx.arc(p.x,p.y,POCKET_R+5,0,Math.PI*2);ctx.fillStyle='#3b1b09';ctx.fill();ctx.beginPath();ctx.arc(p.x,p.y,POCKET_R,0,Math.PI*2);ctx.fillStyle='#020202';ctx.fill();ctx.strokeStyle='rgba(255,255,255,.22)';ctx.lineWidth=4;ctx.stroke()}
+  ctx.restore();
+}
+function roundRect(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function drawCue(){const cue=getCueBall();if(!cue||cue.potted||!allStopped()||gameOver)return;if(ballInHand)drawBallInHand(cue);const dx=mouse.x-cue.x,dy=mouse.y-cue.y,angle=Math.atan2(dy,dx);const power=mouse.down?Math.min((performance.now()-mouse.start)/30,POWER_MAX):0;mouse.power=power;drawAimGuide(cue,angle,power||16);ctx.save();ctx.translate(cue.x,cue.y);ctx.rotate(angle);ctx.strokeStyle='#8b4a18';ctx.lineWidth=10;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-34-power*3,0);ctx.lineTo(-224-power*3,0);ctx.stroke();ctx.strokeStyle='#fbe2a4';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-34-power*3,0);ctx.lineTo(-62-power*3,0);ctx.stroke();ctx.restore();drawGhostCueTarget(cue,angle);if(mouse.down)drawPowerBar(power/POWER_MAX)}
+function drawBallInHand(cue){ctx.save();ctx.beginPath();ctx.arc(cue.x,cue.y,BALL_R+10,0,Math.PI*2);ctx.strokeStyle=legalCuePosition(cue.x,cue.y)?'rgba(255,255,255,.9)':'rgba(255,60,60,.95)';ctx.lineWidth=4;ctx.setLineDash([8,6]);ctx.stroke();ctx.restore()}
+function drawAimGuide(cue,angle,power){
+  if(settings.guide==='minimal'&&!proTrajectoryOn)return;
+  if(!aimGuidesOn&&!proTrajectoryOn)return;
+  ctx.save();ctx.lineCap='round';
+  if(proTrajectoryOn&&adminUnlocked){const prediction=simulateTrajectory(cue,angle,power);ctx.setLineDash([10,7]);ctx.lineWidth=3;for(const path of prediction.allPaths){if(path.length<2)continue;ctx.strokeStyle=path[0].num===0?'rgba(255,255,255,.92)':'rgba(255,230,70,.78)';drawPath(path)}ctx.setLineDash([]);if(prediction.hit){ctx.beginPath();ctx.arc(prediction.hit.x,prediction.hit.y,BALL_R+8,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=3;ctx.stroke()}}
+  else{const hit=findSimpleAimHit(cue,angle);ctx.setLineDash([12,9]);ctx.strokeStyle='rgba(255,255,255,.74)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(cue.x,cue.y);ctx.lineTo(hit.x,hit.y);ctx.stroke();if(hit.ball){const nx=(hit.ball.x-hit.x)/(BALL_R*2),ny=(hit.ball.y-hit.y)/(BALL_R*2);ctx.setLineDash([8,8]);ctx.strokeStyle='rgba(255,230,70,.55)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(hit.ball.x,hit.ball.y);ctx.lineTo(hit.ball.x+nx*88,hit.ball.y+ny*88);ctx.stroke()}}
+  ctx.restore();
+}
+function findSimpleAimHit(cue,angle){const dx=Math.cos(angle),dy=Math.sin(angle);let bestT=Infinity,bestBall=null,best={x:cue.x+dx*260,y:cue.y+dy*260};for(const b of balls){if(b.num===0||b.potted)continue;const fx=b.x-cue.x,fy=b.y-cue.y,t=fx*dx+fy*dy;if(t<=0)continue;const cx=cue.x+dx*t,cy=cue.y+dy*t,perp=Math.hypot(b.x-cx,b.y-cy);if(perp>BALL_R*2)continue;const ghostT=t-Math.sqrt(BALL_R*BALL_R*4-perp*perp);if(ghostT>0&&ghostT<bestT){bestT=ghostT;bestBall=b;best={x:cue.x+dx*ghostT,y:cue.y+dy*ghostT}}}if(!bestBall){let wall=Infinity;if(dx>0)wall=Math.min(wall,(table.x+table.w-BALL_R-cue.x)/dx);if(dx<0)wall=Math.min(wall,(table.x+BALL_R-cue.x)/dx);if(dy>0)wall=Math.min(wall,(table.y+table.h-BALL_R-cue.y)/dy);if(dy<0)wall=Math.min(wall,(table.y+BALL_R-cue.y)/dy);wall=Math.max(0,Math.min(wall,300));best={x:cue.x+dx*wall,y:cue.y+dy*wall}}return{...best,ball:bestBall}}
+function drawPath(path){if(!path||path.length<2)return;ctx.beginPath();ctx.moveTo(path[0].x,path[0].y);for(let i=1;i<path.length;i++)ctx.lineTo(path[i].x,path[i].y);ctx.stroke()}
+function simulateTrajectory(cue,angle,power){const sim=balls.filter(b=>!b.potted).map(b=>({num:b.num,x:b.x,y:b.y,vx:0,vy:0,r:BALL_R,potted:false,path:[]}));const sc=sim.find(b=>b.num===0);if(!sc)return{allPaths:[],hit:null};const speed=Math.max(6,power)*.58,dx=Math.cos(angle),dy=Math.sin(angle);sc.vx=dx*speed+spin.x*.45;sc.vy=dy*speed+spin.y*.45;let hitPoint=null;for(let step=0;step<210;step++){for(const b of sim){if(b.potted)continue;b.x+=b.vx;b.y+=b.vy;b.vx*=FRICTION;b.vy*=FRICTION;if(Math.hypot(b.vx,b.vy)<MIN_SPEED){b.vx=0;b.vy=0}const l=table.x+b.r,r=table.x+table.w-b.r,t=table.y+b.r,bb=table.y+table.h-b.r;if(b.x<l){b.x=l;b.vx*=-CUSHION_RESTITUTION}if(b.x>r){b.x=r;b.vx*=-CUSHION_RESTITUTION}if(b.y<t){b.y=t;b.vy*=-CUSHION_RESTITUTION}if(b.y>bb){b.y=bb;b.vy*=-CUSHION_RESTITUTION}for(const p of pockets){if(Math.hypot(b.x-p.x,b.y-p.y)<POCKET_R-3)b.potted=true}}for(let i=0;i<sim.length;i++){for(let j=i+1;j<sim.length;j++){const a=sim[i],b=sim[j];if(a.potted||b.potted)continue;const x=b.x-a.x,y=b.y-a.y,d=Math.hypot(x,y),min=a.r+b.r;if(d>0&&d<min){const nx=x/d,ny=y/d,overlap=min-d;a.x-=nx*overlap/2;a.y-=ny*overlap/2;b.x+=nx*overlap/2;b.y+=ny*overlap/2;const rvx=b.vx-a.vx,rvy=b.vy-a.vy,vel=rvx*nx+rvy*ny;if(vel<=0){const imp=-(1+BALL_RESTITUTION)*vel/2,ix=imp*nx,iy=imp*ny;a.vx-=ix;a.vy-=iy;b.vx+=ix;b.vy+=iy}if(!hitPoint&&(a.num===0||b.num===0))hitPoint={x:sc.x,y:sc.y}}}}if(step%3===0){for(const b of sim){if(!b.potted&&Math.hypot(b.vx,b.vy)>.02)b.path.push({x:b.x,y:b.y,num:b.num})}}if(sim.every(b=>b.potted||Math.hypot(b.vx,b.vy)<.03))break}return{allPaths:sim.map(b=>b.path).filter(p=>p.length>1),hit:hitPoint}}
+function drawGhostCueTarget(cue,angle){ctx.save();ctx.translate(cue.x,cue.y);ctx.rotate(angle);ctx.globalAlpha=.95;ctx.beginPath();ctx.arc(0,0,BALL_R+7,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,.65)';ctx.lineWidth=2;ctx.stroke();ctx.beginPath();ctx.arc(spin.x*10,spin.y*10,4,0,Math.PI*2);ctx.fillStyle='#ff4242';ctx.fill();ctx.restore()}
+function drawPowerBar(t){const x=W-75,y=100,h=H-200;ctx.save();ctx.fillStyle='rgba(0,0,0,.35)';roundRect(x,y,24,h,12);ctx.fill();const fill=ctx.createLinearGradient(0,y+h,0,y);fill.addColorStop(0,'#8cff6b');fill.addColorStop(.55,'#ffdf45');fill.addColorStop(1,'#ff4343');ctx.fillStyle=fill;roundRect(x+5,y+h-(h-10)*t-5,14,(h-10)*t,8);ctx.fill();ctx.restore()}
+function drawPottedTray(){const potted=balls.filter(b=>b.potted&&b.num!==0).map(b=>b.num);ctx.save();ctx.fillStyle='rgba(10,15,48,.62)';roundRect(72,H-42,W-144,28,14);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.45)';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='rgba(255,255,255,.92)';ctx.font='900 13px Trebuchet MS';ctx.textAlign='center';ctx.fillText('Potted: '+(potted.length?potted.join(', '):'none'),W/2,H-23);ctx.restore()}
+function updateParticles(){for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.vx*=.97;p.vy*=.97;p.life--;if(p.life<=0)particles.splice(i,1)}}
+function drawParticles(){if(settings.effects!=='on')return;ctx.save();for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.c;ctx.fill()}ctx.restore()}
+function burst(x,y,c){if(settings.effects!=='on')return;for(let i=0;i<18;i++){const a=Math.random()*Math.PI*2,s=1+Math.random()*3;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,r:2+Math.random()*2,c,life:28+Math.random()*18,max:46})}}
+function showToast(text){toast.textContent=text;toast.classList.add('show');clearTimeout(showToast.t);showToast.t=setTimeout(()=>toast.classList.remove('show'),1250)}
+function update(){const now=performance.now(),dt=Math.min(.05,(now-lastTick)/1000);lastTick=now;if(!gameOver){if(timerEnabled&&allStopped()&&!ballInHand&&!shotActive&&wrap.classList.contains('show-game')){shotTimer-=dt;if(shotTimer<=0){shotTimer=shotTimerMax;currentPlayer=currentPlayer===1?2:1;ballInHand=true;respotCueBall();setStatus('Shot clock foul. Ball in hand for P'+currentPlayer+'.');showToast('Shot clock foul')}}for(const b of balls)b.update();for(let n=0;n<3;n++)collideBalls();if(chaosMode&&!allStopped()){for(const b of balls){if(!b.potted&&b.num!==0){b.vx+=(Math.random()-.5)*.006;b.vy+=(Math.random()-.5)*.006}}}evaluateShot()}updateParticles();drawTable();drawPottedTray();for(const b of balls)b.draw();drawParticles();drawCue();if(messageTimer>0)messageTimer--;else if(!gameOver&&allStopped())statusEl.textContent=ballInHand?'Ball-in-hand. Drag the white ball, then shoot.':settings.guide==='minimal'?'Aim, hold click for power. Minimal guide is on.':'Aim, hold click for power. Fair guide shows first contact only.';updateHud();requestAnimationFrame(update)}
+
+function canvasPos(e){const rect=canvas.getBoundingClientRect();return{x:(e.clientX-rect.left)*(canvas.width/rect.width),y:(e.clientY-rect.top)*(canvas.height/rect.height)}}
+canvas.addEventListener('mousemove',e=>{const p=canvasPos(e);mouse={...mouse,...p};if(dragCue&&ballInHand&&allStopped()){const cue=getCueBall();if(!cue)return;cue.x=Math.max(table.x+BALL_R,Math.min(table.x+table.w-BALL_R,p.x));cue.y=Math.max(table.y+BALL_R,Math.min(table.y+table.h-BALL_R,p.y))}});
+canvas.addEventListener('mousedown',e=>{initAudio();const p=canvasPos(e),cue=getCueBall();if(gameOver||!allStopped()||!cue||cue.potted)return;if(ballInHand&&Math.hypot(p.x-cue.x,p.y-cue.y)<BALL_R+22){dragCue=true;return}mouse.down=true;mouse.start=performance.now()});
+window.addEventListener('mouseup',()=>{if(dragCue){dragCue=false;return}if(!mouse.down)return;mouse.down=false;if(gameOver||!allStopped())return;const cue=getCueBall();if(!cue||cue.potted)return;if(ballInHand&&!legalCuePosition(cue.x,cue.y)){setStatus('You cannot place the white ball there.');playSound('bad');return}const dx=mouse.x-cue.x,dy=mouse.y-cue.y,len=Math.hypot(dx,dy)||1,power=mouse.power;if(power<1)return;shotActive=true;for(const b of balls)b.railTouched=false;shot={potted:[],firstHit:null,cuePotted:false,railAfterHit:false,anyRail:false,contactMade:false,spinUsed:false};ballInHand=false;cue.vx=(dx/len)*power*.58+spin.x*.45;cue.vy=(dy/len)*power*.58+spin.y*.45;playSound('hit',Math.min(.5,.18+power/55));setStatus('Shot fired. Checking first contact, pots and rails.');updateHud()});
+spinBall.addEventListener('mousedown',e=>{initAudio();setSpinFromEvent(e);playSound('button',.18)});
+spinBall.addEventListener('mousemove',e=>{if(e.buttons===1)setSpinFromEvent(e)});
+function setSpinFromEvent(e){const rect=spinBall.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;let x=(e.clientX-cx)/(rect.width/2),y=(e.clientY-cy)/(rect.height/2),d=Math.hypot(x,y);if(d>.72){x=x/d*.72;y=y/d*.72}spin.x=x;spin.y=y;spinDot.style.left=50+x*50+'%';spinDot.style.top=50+y*50+'%';updateSpinLabel()}
+function syncSettingsUi(){document.getElementById('speedSelect').value=settings.speed;document.getElementById('timerSelect').value=settings.timer;document.getElementById('effectsSelect').value=settings.effects;document.getElementById('guideSelect').value=settings.guide;document.getElementById('settingSpeedBadge').textContent='Speed: '+settings.speed;document.getElementById('settingTimerBadge').textContent='Timer: '+(settings.timer==='off'?'Off':settings.timer+'s');document.getElementById('settingEffectsBadge').textContent='Effects: '+settings.effects}
+function applySettingChanges(){settings.speed=document.getElementById('speedSelect').value;settings.timer=document.getElementById('timerSelect').value;settings.effects=document.getElementById('effectsSelect').value;settings.guide=document.getElementById('guideSelect').value;FRICTION=settings.speed==='slow'?.982:settings.speed==='fast'?.991:.986;timerEnabled=settings.timer!=='off';shotTimerMax=timerEnabled?Number(settings.timer):999;shotTimer=shotTimerMax;syncSettingsUi();showToast('Settings updated');playSound('button')}
+function resetSpin(sound=true){spin={x:0,y:0};spinDot.style.left='50%';spinDot.style.top='50%';updateSpinLabel();if(sound)playSound('button',.14)}
+function updateSpinLabel(){const ax=Math.abs(spin.x),ay=Math.abs(spin.y);if(ax<.18&&ay<.18)spinLabel.textContent='Centre';else if(ay>ax&&spin.y>.05)spinLabel.textContent='Bottom Spin';else if(ay>ax&&spin.y<-.05)spinLabel.textContent='Top Spin';else if(spin.x>.05)spinLabel.textContent='Right Spin';else spinLabel.textContent='Left Spin'}
+function makeDraggable(panel,handle){let active=false,ox=0,oy=0;handle.addEventListener('mousedown',e=>{active=true;const r=panel.getBoundingClientRect();ox=e.clientX-r.left;oy=e.clientY-r.top;e.preventDefault()});window.addEventListener('mousemove',e=>{if(!active)return;const wrapRect=wrap.getBoundingClientRect();let x=e.clientX-wrapRect.left-ox,y=e.clientY-wrapRect.top-oy;x=Math.max(0,Math.min(wrapRect.width-panel.offsetWidth,x));y=Math.max(0,Math.min(wrapRect.height-panel.offsetHeight,y));panel.style.left=x+'px';panel.style.right='auto';panel.style.top=y+'px';panel.style.bottom='auto'});window.addEventListener('mouseup',()=>active=false)}
+
+function runTests(){
+  console.assert(groupOf(1)==='solids','Ball 1 should be solids');
+  console.assert(groupOf(9)==='stripes','Ball 9 should be stripes');
+  console.assert(groupOf(8)==='black','Ball 8 should be black');
+  console.assert(groupOf(0)==='cue','Ball 0 should be cue');
+  console.assert(Array.isArray(rooms),'Rooms should load as an array');
+  console.assert(typeof drawTable==='function','drawTable must exist');
+  console.assert(typeof simulateTrajectory==='function','simulateTrajectory must exist');
+}
+
+makeDraggable(floatingAdmin,document.getElementById('adminDrag'));
+makeDraggable(spinPanel,document.getElementById('spinDrag'));
+runTests();
+applySettingChanges();
+updateScores();
+update();
+</script>
+</body>
+</html>

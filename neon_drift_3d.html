@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Neon Drift 3D</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #000; overflow: hidden; font-family: 'Trebuchet MS', sans-serif; }
+  #c { display: block; width: 100vw; height: 100vh; }
+
+  #hud {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 10;
+  }
+
+  #stats {
+    position: absolute; top: 18px; left: 22px;
+    color: #fff; font-size: 15px; line-height: 1.7;
+    text-shadow: 0 0 8px #46f6ff;
+  }
+  #stats span { color: #46f6ff; }
+
+  #message {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    color: #ffe65f; font-size: 28px; font-weight: bold;
+    text-shadow: 0 0 20px #ffe65f;
+    text-align: center; pointer-events: none;
+    transition: opacity 0.4s;
+  }
+
+  #parry-prompt {
+    position: absolute; top: 55%; left: 50%; transform: translateX(-50%);
+    color: #a569ff; font-size: 38px; font-weight: bold;
+    text-shadow: 0 0 20px #a569ff;
+    display: none; pointer-events: none;
+    animation: pulse 0.5s infinite alternate;
+  }
+  @keyframes pulse { from { transform: translateX(-50%) scale(1); } to { transform: translateX(-50%) scale(1.12); } }
+
+  #boss-bar {
+    position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
+    width: 520px; display: none;
+  }
+  #boss-name {
+    color: #ffe65f; font-size: 17px; font-weight: bold;
+    text-align: center; margin-bottom: 6px;
+    text-shadow: 0 0 10px #ffe65f;
+  }
+  #boss-track {
+    background: rgba(255,255,255,0.15); border-radius: 12px; height: 22px;
+    border: 2px solid rgba(255,255,255,0.4); overflow: hidden;
+  }
+  #boss-fill {
+    height: 100%; background: linear-gradient(90deg, #ff375c, #ff6090);
+    border-radius: 10px; transition: width 0.15s;
+    box-shadow: 0 0 12px #ff375c;
+  }
+
+  #shield-bar {
+    position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+    width: 300px;
+  }
+  #shield-label {
+    color: #46f6ff; font-size: 13px; text-align: center; margin-bottom: 4px;
+    text-shadow: 0 0 6px #46f6ff;
+  }
+  #shield-track {
+    background: rgba(255,255,255,0.1); border-radius: 8px; height: 14px;
+    border: 2px solid rgba(70,246,255,0.4); overflow: hidden;
+  }
+  #shield-fill {
+    height: 100%; background: linear-gradient(90deg, #46f6ff, #6effb0);
+    border-radius: 6px; transition: width 0.2s;
+  }
+
+  /* SCREENS */
+  .screen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 20; background: rgba(8,11,30,0.92);
+  }
+  .screen.hidden { display: none; }
+
+  h1.logo {
+    font-size: 88px; font-weight: 900; letter-spacing: 6px;
+    background: linear-gradient(135deg, #46f6ff 0%, #ffe65f 50%, #ff5cad 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-shadow: none; margin-bottom: 8px;
+    animation: logoGlow 2s infinite alternate;
+  }
+  @keyframes logoGlow {
+    from { filter: drop-shadow(0 0 20px #46f6ff); }
+    to { filter: drop-shadow(0 0 40px #ff5cad); }
+  }
+  .tagline { color: #a569ff; font-size: 22px; margin-bottom: 50px; letter-spacing: 2px; }
+
+  .btn {
+    background: transparent; border: 2px solid #46f6ff; color: #46f6ff;
+    font-family: inherit; font-size: 20px; font-weight: bold;
+    padding: 14px 48px; border-radius: 40px; cursor: pointer;
+    margin: 8px; letter-spacing: 2px; transition: all 0.2s;
+    text-transform: uppercase; pointer-events: all;
+  }
+  .btn:hover {
+    background: #46f6ff; color: #060a1e;
+    box-shadow: 0 0 30px #46f6ff;
+    transform: scale(1.05);
+  }
+  .btn.yellow { border-color: #ffe65f; color: #ffe65f; }
+  .btn.yellow:hover { background: #ffe65f; color: #060a1e; box-shadow: 0 0 30px #ffe65f; }
+  .btn.pink { border-color: #ff5cad; color: #ff5cad; }
+  .btn.pink:hover { background: #ff5cad; color: #060a1e; box-shadow: 0 0 30px #ff5cad; }
+
+  .hint { color: rgba(255,255,255,0.4); font-size: 13px; margin-top: 20px; }
+
+  /* LEVEL SELECT */
+  #level-list { width: 640px; margin: 20px 0; }
+  .level-row {
+    display: flex; align-items: center; padding: 12px 18px;
+    border-radius: 10px; margin: 5px 0; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.1); transition: all 0.15s;
+    pointer-events: all;
+  }
+  .level-row:hover:not(.locked) { background: rgba(70,246,255,0.1); border-color: #46f6ff; }
+  .level-row.locked { opacity: 0.35; cursor: default; }
+  .level-num { color: #46f6ff; font-size: 18px; font-weight: bold; width: 32px; }
+  .level-info { flex: 1; }
+  .level-name { color: #fff; font-size: 16px; font-weight: bold; }
+  .level-obj { color: rgba(255,255,255,0.5); font-size: 13px; }
+  .level-badge { font-size: 20px; }
+
+  /* DEV CONSOLE */
+  #dev-console {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 700px; background: rgba(5,8,28,0.97);
+    border: 2px solid #46f6ff; border-radius: 16px;
+    padding: 28px; z-index: 100;
+    box-shadow: 0 0 60px rgba(70,246,255,0.3);
+    display: none;
+  }
+  #dev-console h3 { color: #ffe65f; font-size: 20px; margin-bottom: 16px; }
+  #dev-console .cmd-list {
+    color: rgba(255,255,255,0.65); font-size: 13px; font-family: monospace;
+    line-height: 2; margin-bottom: 18px; column-count: 2;
+  }
+  #dev-input {
+    width: 100%; background: rgba(70,246,255,0.08);
+    border: 2px solid #46f6ff; border-radius: 8px;
+    color: #46f6ff; font-family: monospace; font-size: 16px;
+    padding: 10px 14px; outline: none;
+  }
+  #dev-status { color: #ffe65f; font-size: 14px; margin-top: 10px; min-height: 20px; font-family: monospace; }
+
+  /* DAMAGE FLASH */
+  #dmg-flash {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    pointer-events: none; z-index: 50;
+    background: rgba(255,50,80,0);
+    transition: background 0.1s;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="hud">
+  <div id="stats">
+    <div id="stat-level">Level: —</div>
+    <div id="stat-score">Score: <span id="s-score">0</span></div>
+    <div id="stat-cores">Cores: <span id="s-cores">0</span> / <span id="s-target">0</span></div>
+    <div id="stat-time">Time: <span id="s-time">0</span>s</div>
+    <div id="stat-parries">Parries: <span id="s-parries">0</span></div>
+    <div id="stat-god" style="color:#6eff82;display:none">⚡ GOD MODE</div>
+  </div>
+  <div id="message"></div>
+  <div id="parry-prompt">LEFT CLICK TO PARRY!</div>
+  <div id="boss-bar"><div id="boss-name"></div><div id="boss-track"><div id="boss-fill"></div></div></div>
+  <div id="shield-bar"><div id="shield-label">SHIELD</div><div id="shield-track"><div id="shield-fill"></div></div></div>
+</div>
+
+<!-- SCREENS -->
+<div class="screen" id="screen-menu">
+  <h1 class="logo">NEON DRIFT</h1>
+  <div class="tagline">3D EDITION</div>
+  <button class="btn yellow" onclick="G.showLevelSelect()">Story Mode</button>
+  <button class="btn" onclick="G.startArcade()">Arcade Run</button>
+  <div class="hint">F2 → Dev Console &nbsp;|&nbsp; WASD/Arrows to move &nbsp;|&nbsp; Space = Boost &nbsp;|&nbsp; Click = Parry</div>
+</div>
+
+<div class="screen hidden" id="screen-levels">
+  <h1 style="color:#ffe65f;font-size:42px;font-weight:900;margin-bottom:8px">MISSION SELECT</h1>
+  <div id="level-list"></div>
+  <button class="btn" style="margin-top:10px" onclick="G.showMenu()">↩ Menu</button>
+</div>
+
+<div class="screen hidden" id="screen-dead">
+  <h1 style="color:#ff375c;font-size:64px;font-weight:900">WRECKED</h1>
+  <div style="color:rgba(255,255,255,0.6);font-size:22px;margin:16px 0" id="dead-score"></div>
+  <button class="btn pink" onclick="G.restartLevel()">Try Again</button>
+  <button class="btn" onclick="G.showMenu()">Menu</button>
+</div>
+
+<div class="screen hidden" id="screen-win">
+  <h1 style="color:#6eff82;font-size:64px;font-weight:900">MISSION CLEAR</h1>
+  <div style="color:rgba(255,255,255,0.6);font-size:22px;margin:16px 0" id="win-score"></div>
+  <button class="btn yellow" onclick="G.showLevelSelect()">Level Select</button>
+  <button class="btn" onclick="G.showMenu()">Menu</button>
+</div>
+
+<!-- DEV CONSOLE -->
+<div id="dev-console">
+  <h3 id="dc-title">DEV CONSOLE</h3>
+  <div class="cmd-list" id="dc-cmds"></div>
+  <input id="dev-input" placeholder="> type command..." autocomplete="off" spellcheck="false">
+  <div id="dev-status"></div>
+</div>
+
+<div id="dmg-flash"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ─── SETTINGS ────────────────────────────────────────────────────────────────
+const DEV_PASSWORD = "Carsarecool";
+const DIFFICULTIES = {
+  chill:     { shield: 130, scroll_speed: 4.2, block_rate: 70, core_rate: 42, damage: 14 },
+  normal:    { shield: 110, scroll_speed: 5.5, block_rate: 55, core_rate: 36, damage: 22 },
+  hard:      { shield: 90,  scroll_speed: 6.8, block_rate: 38, core_rate: 44, damage: 31 },
+  nightmare: { shield: 72,  scroll_speed: 8.5, block_rate: 27, core_rate: 54, damage: 41 },
+};
+const LEVELS = [
+  { id:1, name:"Warm-Up Wreck",    obj:"Collect 8 cores",                      diff:"chill",     cores:8,  time:0,  boss:null,    intro:"Warm-up run. Try not to become wall paste." },
+  { id:2, name:"Cube Rush",         obj:"Collect 6 cores & survive 40s",         diff:"normal",    cores:6,  time:40, boss:null,    intro:"Level 2 is now beatable. Revolutionary." },
+  { id:3, name:"Big Barry Blockhands", obj:"Defeat Barry",                       diff:"normal",    cores:0,  time:0,  boss:"barry", intro:"Barry has hands. Barry throws blocks. Barry is a problem." },
+  { id:4, name:"Laser Soup",        obj:"Collect 10 cores & survive 55s",        diff:"hard",      cores:10, time:55, boss:null,    intro:"Lasers. Blocks. Awful vibes." },
+  { id:5, name:"Mina Moonzap",      obj:"Defeat Mina",                           diff:"hard",      cores:0,  time:0,  boss:"mina",  intro:"Mina throws purple shots like she gets paid per parry." },
+  { id:6, name:"Nightmare Highway", obj:"Collect 12 cores & survive 70s",        diff:"nightmare", cores:12, time:70, boss:null,    intro:"This one is meant to be rude." },
+  { id:7, name:"Glitch Gordon",     obj:"Defeat Gordon before he debugs you",    diff:"nightmare", cores:0,  time:0,  boss:"gordon",intro:"Gordon is a sentient error. He does NOT like you." },
+];
+const BOSSES = {
+  barry:  { name:"Big Barry Blockhands", hp:120, bodyColor:0x46f6ff, skinColor:0xffa040, throw_rate:58, purple_chance:0.42, damage:24,
+            quips:["YOU WILL NOT PASS!", "TASTE MY BLOCKS!", "BARRY SMASH!", "DODGING MY BLOCKS AGAIN?!"] },
+  mina:   { name:"Mina Moonzap",         hp:155, bodyColor:0xa569ff, skinColor:0xff6ebe, throw_rate:42, purple_chance:0.62, damage:32,
+            quips:["Parry THIS!", "Oh you think you're clever?", "MOON. ZAP. NOW.", "I do NOT miss."] },
+  gordon: { name:"Glitch Gordon",        hp:200, bodyColor:0x6eff82, skinColor:0x33ffaa, throw_rate:32, purple_chance:0.75, damage:38,
+            quips:["SYNTAX ERROR: YOU", "FATAL EXCEPTION: LIFE", "PERMISSION DENIED", "404: DODGE NOT FOUND", "BUFFER OVERFLOW DETECTED"] },
+};
+
+// ─── THREE.JS SETUP ───────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x060a1e);
+scene.fog = new THREE.Fog(0x060a1e, 30, 80);
+
+const camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.1, 200);
+camera.position.set(0, 14, 22);
+camera.lookAt(0, 0, -5);
+
+function resize() {
+  renderer.setSize(innerWidth, innerHeight);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Lighting
+const ambient = new THREE.AmbientLight(0x223366, 0.9);
+scene.add(ambient);
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+dirLight.position.set(0, 20, 10);
+dirLight.castShadow = true;
+scene.add(dirLight);
+const neonBlue = new THREE.PointLight(0x46f6ff, 2, 40);
+neonBlue.position.set(0, 5, 0);
+scene.add(neonBlue);
+const neonPink = new THREE.PointLight(0xff5cad, 1.5, 35);
+neonPink.position.set(-8, 3, -10);
+scene.add(neonPink);
+
+// ─── ROAD / TUNNEL ────────────────────────────────────────────────────────────
+const ROAD_Z_START = 10;
+const ROAD_Z_END = -80;
+const LANE_XS = [-6, -3, 0, 3, 6];
+
+// Ground plane
+const groundGeo = new THREE.PlaneGeometry(18, 100);
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x0a0d28, roughness: 0.9 });
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.z = -35;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Lane lines (glowing strips)
+function makeLaneLine(x) {
+  const geo = new THREE.PlaneGeometry(0.08, 90);
+  const mat = new THREE.MeshBasicMaterial({ color: 0x46f6ff, transparent: true, opacity: 0.25 });
+  const m = new THREE.Mesh(geo, mat);
+  m.rotation.x = -Math.PI / 2;
+  m.position.set(x, 0.01, -35);
+  scene.add(m);
+}
+[-7.5, -4.5, -1.5, 1.5, 4.5, 7.5].forEach(makeLaneLine);
+
+// Side walls
+function makeSideWall(x) {
+  const geo = new THREE.BoxGeometry(0.3, 2.5, 90);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x1a2460, emissive: 0x0a1230, roughness: 0.5 });
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x, 1.25, -35);
+  scene.add(m);
+
+  // Neon strip on wall
+  const stripGeo = new THREE.BoxGeometry(0.05, 0.15, 85);
+  const stripMat = new THREE.MeshBasicMaterial({ color: x < 0 ? 0x46f6ff : 0xff5cad });
+  const strip = new THREE.Mesh(stripGeo, stripMat);
+  strip.position.set(x + (x < 0 ? 0.18 : -0.18), 2.4, -35);
+  scene.add(strip);
+}
+makeSideWall(-8.5);
+makeSideWall(8.5);
+
+// Scrolling road tiles
+const TILE_COUNT = 12;
+const TILE_LENGTH = 8;
+const tiles = [];
+for (let i = 0; i < TILE_COUNT; i++) {
+  const geo = new THREE.PlaneGeometry(17, TILE_LENGTH);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x080b24, roughness: 0.8 });
+  const t = new THREE.Mesh(geo, mat);
+  t.rotation.x = -Math.PI / 2;
+  t.receiveShadow = true;
+  t.position.set(0, 0.005, -i * TILE_LENGTH);
+  scene.add(t);
+  tiles.push(t);
+}
+
+// Dashed centre line tiles
+const dashTiles = [];
+for (let i = 0; i < 20; i++) {
+  const geo = new THREE.PlaneGeometry(0.2, 2.5);
+  const mat = new THREE.MeshBasicMaterial({ color: 0xffe65f, transparent: true, opacity: 0.5 });
+  const d = new THREE.Mesh(geo, mat);
+  d.rotation.x = -Math.PI / 2;
+  d.position.set(0, 0.02, -i * 5);
+  scene.add(d);
+  dashTiles.push(d);
+}
+
+// Stars / background particles
+const starGeo = new THREE.BufferGeometry();
+const starVerts = [];
+for (let i = 0; i < 600; i++) {
+  starVerts.push((Math.random() - 0.5) * 120, Math.random() * 30 + 2, -(Math.random() * 100));
+}
+starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starVerts, 3));
+const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.18, transparent: true, opacity: 0.7 });
+const stars = new THREE.Points(starGeo, starMat);
+scene.add(stars);
+
+// ─── HELPER: Cartoon mesh builders ───────────────────────────────────────────
+function box(w, h, d, color, emissive = 0x000000) {
+  const geo = new THREE.BoxGeometry(w, h, d);
+  const mat = new THREE.MeshStandardMaterial({ color, emissive, roughness: 0.4, metalness: 0.1 });
+  return new THREE.Mesh(geo, mat);
+}
+function sphere(r, color) {
+  const geo = new THREE.SphereGeometry(r, 12, 10);
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.5 });
+  return new THREE.Mesh(geo, mat);
+}
+function cyl(rt, rb, h, color) {
+  const geo = new THREE.CylinderGeometry(rt, rb, h, 10);
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.5 });
+  return new THREE.Mesh(geo, mat);
+}
+
+// ─── PLAYER ───────────────────────────────────────────────────────────────────
+let playerGroup = new THREE.Group();
+// Body
+const pBody = box(1.1, 0.5, 2.2, 0x46f6ff, 0x0a3040);
+pBody.position.y = 0.5;
+playerGroup.add(pBody);
+// Cockpit dome
+const pDome = sphere(0.42, 0xffffff);
+pDome.position.set(0, 0.95, -0.1);
+playerGroup.add(pDome);
+// Wings
+const pWingL = box(1.2, 0.12, 0.9, 0xff5cad, 0x400020);
+pWingL.position.set(-1.15, 0.42, 0.3);
+playerGroup.add(pWingL);
+const pWingR = box(1.2, 0.12, 0.9, 0xff5cad, 0x400020);
+pWingR.position.set(1.15, 0.42, 0.3);
+playerGroup.add(pWingR);
+// Engine glow
+const pEngL = sphere(0.22, 0x46f6ff);
+pEngL.position.set(-0.45, 0.45, 1.2);
+playerGroup.add(pEngL);
+const pEngR = sphere(0.22, 0x46f6ff);
+pEngR.position.set(0.45, 0.45, 1.2);
+playerGroup.add(pEngR);
+// Engine light
+const engineLight = new THREE.PointLight(0x46f6ff, 3, 6);
+engineLight.position.set(0, 0.5, 1.3);
+playerGroup.add(engineLight);
+
+playerGroup.castShadow = true;
+scene.add(playerGroup);
+
+let playerPos = { x: 0, z: 4 };
+const PLAYER_BOUNDS = { xMin: -7, xMax: 7, zMin: 1, zMax: 8 };
+let boostActive = false;
+let playerTilt = 0;
+
+// ─── ENTITY POOLS ────────────────────────────────────────────────────────────
+let hazards = [], coresList = [], lasers = [], bossBlocks = [];
+
+function makeCubeHazard(speed, purple = false, fromBoss = false) {
+  const grp = new THREE.Group();
+  const col = purple ? 0xa569ff : 0xff375c;
+  const emis = purple ? 0x2a0060 : 0x400010;
+  const b = box(1.5, 1.5, 1.5, col, emis);
+  grp.add(b);
+  // Neon outline (edge glow effect using slightly larger wireframe)
+  const wGeo = new THREE.BoxGeometry(1.6, 1.6, 1.6);
+  const wMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.35 });
+  grp.add(new THREE.Mesh(wGeo, wMat));
+
+  if (purple) {
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(1.1, 0.06, 8, 24),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 })
+    );
+    ring.rotation.x = Math.PI / 2;
+    grp.add(ring);
+  }
+
+  grp.position.set(LANE_XS[Math.floor(Math.random() * LANE_XS.length)], 0.75, -55);
+  scene.add(grp);
+
+  const light = new THREE.PointLight(purple ? 0xa569ff : 0xff375c, 2, 5);
+  grp.add(light);
+
+  return { mesh: grp, speed, vz: speed, vx: 0, purple, fromBoss, parried: false, alive: true };
+}
+
+function makeCore(speed) {
+  const grp = new THREE.Group();
+  const diamond = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.7),
+    new THREE.MeshStandardMaterial({ color: 0xffe65f, emissive: 0x402000, metalness: 0.6, roughness: 0.2 })
+  );
+  grp.add(diamond);
+  const glow = new THREE.PointLight(0xffe65f, 3, 4);
+  grp.add(glow);
+  grp.position.set(LANE_XS[Math.floor(Math.random() * LANE_XS.length)], 0.85, -55);
+  scene.add(grp);
+  return { mesh: grp, speed, alive: true };
+}
+
+function makeLaserWall(speed) {
+  const horizontal = Math.random() > 0.5;
+  const grp = new THREE.Group();
+  let w, h;
+  if (horizontal) {
+    w = 17; h = 0.35;
+    grp.position.set(0, 0.6 + Math.random() * 1.2, -55);
+  } else {
+    w = 0.35; h = 3;
+    grp.position.set(LANE_XS[Math.floor(Math.random() * LANE_XS.length)], 1.5, -55);
+  }
+  const b = box(w, h, 0.3, 0xff5cad, 0x400030);
+  grp.add(b);
+  const lgt = new THREE.PointLight(0xff5cad, 2, 6);
+  grp.add(lgt);
+  scene.add(grp);
+  return { mesh: grp, speed, alive: true, horizontal, w, h };
+}
+
+// ─── BOSS ─────────────────────────────────────────────────────────────────────
+let bossObj = null;
+let bossQuipTimer = 0;
+
+function buildBossMesh(profile) {
+  const grp = new THREE.Group();
+  const skin = profile.skinColor;
+  const shirt = profile.bodyColor;
+
+  // Torso
+  const torso = box(2.2, 2.6, 1.4, shirt, 0x001020);
+  torso.position.y = 2.0;
+  grp.add(torso);
+
+  // Head
+  const head = box(1.9, 1.7, 1.7, skin);
+  head.position.y = 4.0;
+  grp.add(head);
+
+  // Eyes
+  const eyeL = box(0.28, 0.28, 0.1, 0x111122);
+  eyeL.position.set(-0.48, 4.15, 0.85);
+  grp.add(eyeL);
+  const eyeR = box(0.28, 0.28, 0.1, 0x111122);
+  eyeR.position.set(0.48, 4.15, 0.85);
+  grp.add(eyeR);
+
+  // Pupil shine
+  const pupilL = sphere(0.09, 0xffffff);
+  pupilL.position.set(-0.42, 4.22, 0.9);
+  grp.add(pupilL);
+  const pupilR = sphere(0.09, 0xffffff);
+  pupilR.position.set(0.54, 4.22, 0.9);
+  grp.add(pupilR);
+
+  // Mouth (grin)
+  const mouth = box(0.9, 0.22, 0.1, 0x221133);
+  mouth.position.set(0, 3.62, 0.86);
+  grp.add(mouth);
+
+  // Teeth
+  for (let i = -1; i <= 1; i++) {
+    const tooth = box(0.18, 0.22, 0.1, 0xffffff);
+    tooth.position.set(i * 0.28, 3.62, 0.87);
+    grp.add(tooth);
+  }
+
+  // Arms
+  const armL = box(0.7, 2.4, 0.7, skin);
+  armL.position.set(-1.65, 2.0, 0);
+  grp.add(armL);
+  const armR = box(0.7, 2.4, 0.7, skin);
+  armR.position.set(1.65, 2.0, 0);
+  grp.add(armR);
+
+  // Hands (big cartoony)
+  const handL = sphere(0.55, skin);
+  handL.position.set(-1.65, 0.6, 0);
+  grp.add(handL);
+  const handR = sphere(0.55, skin);
+  handR.position.set(1.65, 0.6, 0);
+  grp.add(handR);
+
+  // Legs
+  const legL = box(0.7, 1.5, 0.7, 0x223366);
+  legL.position.set(-0.7, 0.3, 0);
+  grp.add(legL);
+  const legR = box(0.7, 1.5, 0.7, 0x223366);
+  legR.position.set(0.7, 0.3, 0);
+  grp.add(legR);
+
+  // Gordon special: glitchy antenna
+  if (profile === BOSSES.gordon) {
+    const ant = cyl(0.05, 0.05, 1.2, 0x6eff82);
+    ant.position.set(0, 5.2, 0);
+    grp.add(ant);
+    const tip = sphere(0.2, 0x6eff82);
+    tip.position.set(0, 5.85, 0);
+    grp.add(tip);
+  }
+
+  // Boss glow
+  const bossLight = new THREE.PointLight(shirt, 3, 12);
+  bossLight.position.set(0, 3, 0);
+  grp.add(bossLight);
+
+  grp.position.set(0, 0, -22);
+  grp.scale.set(0.9, 0.9, 0.9);
+  scene.add(grp);
+
+  return grp;
+}
+
+// ─── QUIP DISPLAY ─────────────────────────────────────────────────────────────
+function showQuip(text) {
+  showMsg(text, 2500);
+}
+
+// ─── GAME STATE ───────────────────────────────────────────────────────────────
+const G = {
+  state: 'menu',
+  level: null,
+  settings: DIFFICULTIES.normal,
+  unlockedLevel: 1,
+
+  score: 0, shield: 100, maxShield: 100, cores: 0,
+  parries: 0, timer: 0, frame: 0, speedBonus: 0,
+  godMode: false, running: true,
+
+  devOpen: false, devAuth: false, lastLevel: null,
+
+  showMenu() {
+    this.state = 'menu';
+    show('screen-menu'); hide('screen-levels'); hide('screen-dead'); hide('screen-win');
+    clearEntities();
+    hideBossBar(); hideShieldBar();
+  },
+
+  showLevelSelect() {
+    buildLevelList();
+    show('screen-levels'); hide('screen-menu'); hide('screen-dead'); hide('screen-win');
+  },
+
+  startLevel(id) {
+    const lv = LEVELS.find(l => l.id === id);
+    if (!lv) return;
+    this.lastLevel = id;
+    this._startRun(lv);
+  },
+
+  startArcade() {
+    this.lastLevel = null;
+    this._startRun({ id:0, name:'Arcade Run', obj:'Survive as long as possible',
+      diff:'normal', cores:9999, time:9999, boss:null, intro:'No plot. Just panic.' });
+  },
+
+  restartLevel() {
+    if (this.lastLevel) this.startLevel(this.lastLevel);
+    else this.startArcade();
+  },
+
+  _startRun(lv) {
+    hide('screen-menu'); hide('screen-levels'); hide('screen-dead'); hide('screen-win');
+    this.state = 'playing';
+    this.level = lv;
+    this.settings = DIFFICULTIES[lv.diff];
+
+    playerPos.x = 0; playerPos.z = 4;
+    clearEntities();
+
+    this.score = 0; this.shield = this.settings.shield;
+    this.maxShield = this.settings.shield;
+    this.cores = 0; this.parries = 0;
+    this.timer = 0; this.frame = 0; this.speedBonus = 0;
+    bossObj = null; bossQuipTimer = 0;
+
+    updateHUD();
+    showShieldBar();
+    showMsg(lv.intro, 3500);
+  },
+
+  takeDamage(amt) {
+    if (this.godMode) { showMsg("God mode blocked it.", 1500); return; }
+    this.shield -= amt;
+    flashDamage();
+    showMsg(`Shield -${amt}`, 1000);
+    if (this.shield <= 0) {
+      this.shield = 0;
+      this._die();
+    }
+  },
+
+  _die() {
+    this.state = 'dead';
+    clearEntities();
+    hideBossBar();
+    document.getElementById('dead-score').textContent =
+      `Score: ${Math.floor(this.score)}  |  Cores: ${this.cores}  |  Parries: ${this.parries}`;
+    show('screen-dead');
+  },
+
+  completeLevel() {
+    if (this.level && this.level.id > 0 && this.level.id === this.unlockedLevel) {
+      this.unlockedLevel = Math.min(LEVELS.length, this.unlockedLevel + 1);
+    }
+    this.state = 'win';
+    clearEntities(); hideBossBar();
+    document.getElementById('win-score').textContent =
+      `Score: ${Math.floor(this.score)}  |  Cores: ${this.cores}  |  Parries: ${this.parries}`;
+    show('screen-win');
+  },
+
+  tryParry() {
+    if (this.state !== 'playing') return;
+    for (const b of bossBlocks) {
+      if (b.purple && !b.parried) {
+        const dx = b.mesh.position.x - playerGroup.position.x;
+        const dz = b.mesh.position.z - playerGroup.position.z;
+        if (Math.sqrt(dx*dx + dz*dz) < 5) {
+          b.parried = true;
+          this.parries++;
+          showMsg("PARRIED! Sending it back!", 1800);
+          return;
+        }
+      }
+    }
+  }
+};
+
+// ─── HUD HELPERS ─────────────────────────────────────────────────────────────
+let msgTimer = null;
+function showMsg(text, duration = 2000) {
+  const el = document.getElementById('message');
+  el.textContent = text;
+  el.style.opacity = 1;
+  if (msgTimer) clearTimeout(msgTimer);
+  msgTimer = setTimeout(() => { el.style.opacity = 0; }, duration);
+}
+
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+
+function showShieldBar() { document.getElementById('shield-bar').style.display = 'block'; }
+function hideShieldBar() { document.getElementById('shield-bar').style.display = 'none'; }
+function showBossBar() { document.getElementById('boss-bar').style.display = 'block'; }
+function hideBossBar() { document.getElementById('boss-bar').style.display = 'none'; }
+
+function updateHUD() {
+  const l = G.level;
+  document.getElementById('stat-level').textContent = `Level: ${l ? l.name : '—'}`;
+  document.getElementById('s-score').textContent = Math.floor(G.score);
+  document.getElementById('s-cores').textContent = G.cores;
+  document.getElementById('s-target').textContent = l ? l.cores : 0;
+  document.getElementById('s-time').textContent = Math.floor(G.timer);
+  document.getElementById('s-parries').textContent = G.parries;
+  document.getElementById('stat-god').style.display = G.godMode ? 'block' : 'none';
+
+  const sPct = Math.max(0, G.shield / G.maxShield * 100);
+  document.getElementById('shield-fill').style.width = sPct + '%';
+}
+
+function flashDamage() {
+  const el = document.getElementById('dmg-flash');
+  el.style.background = 'rgba(255,50,80,0.35)';
+  setTimeout(() => { el.style.background = 'rgba(255,50,80,0)'; }, 150);
+}
+
+function buildLevelList() {
+  const el = document.getElementById('level-list');
+  el.innerHTML = '';
+  const badges = ['🏎️','💥','🤜','⚡','🌙','💀','👾'];
+  LEVELS.forEach(lv => {
+    const locked = lv.id > G.unlockedLevel;
+    const row = document.createElement('div');
+    row.className = 'level-row' + (locked ? ' locked' : '');
+    row.innerHTML = `
+      <div class="level-num">${lv.id}</div>
+      <div class="level-info">
+        <div class="level-name">${lv.name}</div>
+        <div class="level-obj">${lv.obj}</div>
+      </div>
+      <div class="level-badge">${badges[lv.id-1] || '⭐'}</div>`;
+    if (!locked) row.onclick = () => { hide('screen-levels'); G.startLevel(lv.id); };
+    el.appendChild(row);
+  });
+}
+
+// ─── ENTITY MANAGEMENT ────────────────────────────────────────────────────────
+function clearEntities() {
+  [...hazards, ...coresList, ...lasers, ...bossBlocks].forEach(e => scene.remove(e.mesh));
+  hazards = []; coresList = []; lasers = []; bossBlocks = [];
+  if (bossObj) { scene.remove(bossObj); bossObj = null; }
+}
+
+// ─── INPUT ────────────────────────────────────────────────────────────────────
+const keys = {};
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code === 'F2') { e.preventDefault(); toggleDevConsole(); }
+  if (e.code === 'Escape') {
+    if (G.devOpen) { closeDevConsole(); }
+    else if (G.state === 'playing') G.showMenu();
+  }
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+window.addEventListener('click', () => G.tryParry());
+
+// ─── DEV CONSOLE ──────────────────────────────────────────────────────────────
+const COMMANDS = [
+  'help','close','unlock all','unlock <num>','level <num>','arcade',
+  'shield <num>','cores <num>','score <num>','speed <num>',
+  'difficulty chill/normal/hard/nightmare','boss barry/mina/gordon',
+  'killboss','god','damage <num>','clear'
+];
+
+function toggleDevConsole() {
+  if (!G.devOpen) {
+    G.devOpen = true;
+    document.getElementById('dev-console').style.display = 'block';
+    const inp = document.getElementById('dev-input');
+    inp.value = '';
+    if (!G.devAuth) {
+      document.getElementById('dc-title').textContent = 'PASSWORD';
+      document.getElementById('dc-cmds').textContent = 'Enter the dev password.';
+      document.getElementById('dev-input').type = 'password';
+    } else {
+      openCommandMode();
+    }
+    document.getElementById('dev-status').textContent = G.devAuth ? 'Ready.' : 'Enter password.';
+    setTimeout(() => inp.focus(), 50);
+  } else {
+    closeDevConsole();
+  }
+}
+
+function openCommandMode() {
+  document.getElementById('dc-title').textContent = 'DEV CONSOLE';
+  document.getElementById('dc-cmds').innerHTML = COMMANDS.map(c => `<div>${c}</div>`).join('');
+  document.getElementById('dev-input').type = 'text';
+}
+
+function closeDevConsole() {
+  G.devOpen = false;
+  document.getElementById('dev-console').style.display = 'none';
+  G.devAuth; // keep auth state
+}
+
+document.getElementById('dev-input').addEventListener('keydown', e => {
+  if (e.code !== 'Enter') return;
+  const val = e.target.value.trim();
+  e.target.value = '';
+
+  if (!G.devAuth) {
+    if (val === DEV_PASSWORD) {
+      G.devAuth = true;
+      openCommandMode();
+      document.getElementById('dev-status').textContent = 'Access granted. Welcome, cheater.';
+    } else {
+      document.getElementById('dev-status').textContent = 'Wrong password. Brutal.';
+    }
+    return;
+  }
+  document.getElementById('dev-status').textContent = runDevCommand(val);
+});
+
+function runDevCommand(cmd) {
+  const parts = cmd.toLowerCase().split(/\s+/);
+  if (!parts[0]) return 'Type something first.';
+  try {
+    if (parts[0] === 'help') return 'Commands listed above.';
+    if (parts[0] === 'close') { closeDevConsole(); return 'Closed.'; }
+    if (parts[0] === 'unlock') {
+      if (parts[1] === 'all') { G.unlockedLevel = LEVELS.length; return 'All levels unlocked.'; }
+      if (parts[1]) { G.unlockedLevel = Math.max(1, Math.min(parseInt(parts[1]), LEVELS.length)); return `Unlocked up to ${G.unlockedLevel}.`; }
+    }
+    if (parts[0] === 'level') { closeDevConsole(); G.startLevel(parseInt(parts[1])); return 'Started.'; }
+    if (parts[0] === 'arcade') { closeDevConsole(); G.startArcade(); return 'Arcade started.'; }
+    if (parts[0] === 'shield') { G.shield = parseInt(parts[1]); return `Shield → ${G.shield}`; }
+    if (parts[0] === 'cores') { G.cores = parseInt(parts[1]); return `Cores → ${G.cores}`; }
+    if (parts[0] === 'score') { G.score = parseInt(parts[1]); return `Score → ${G.score}`; }
+    if (parts[0] === 'speed') { G.speedBonus = parseInt(parts[1]); return `Speed bonus → ${G.speedBonus}`; }
+    if (parts[0] === 'difficulty') { G.settings = DIFFICULTIES[parts[1]] || G.settings; return `Difficulty → ${parts[1]}`; }
+    if (parts[0] === 'boss') {
+      if (G.state !== 'playing') return 'Start a level first.';
+      spawnBoss(parts[1]);
+      return `Spawned ${parts[1]}.`;
+    }
+    if (parts[0] === 'killboss') { if (bossObj) { bossObj._hp = 0; } return 'Boss yeet.'; }
+    if (parts[0] === 'god') { G.godMode = !G.godMode; return G.godMode ? 'God mode ON.' : 'God mode OFF.'; }
+    if (parts[0] === 'damage') { G.takeDamage(parseInt(parts[1])); return `Took ${parts[1]} damage.`; }
+    if (parts[0] === 'clear') { clearEntities(); return 'Cleared.'; }
+    return 'Unknown command.';
+  } catch(e) { return `Error: ${e.message}`; }
+}
+
+// ─── BOSS SPAWNING ────────────────────────────────────────────────────────────
+let bossDir = 1, bossThrowTimer = 0, bossMoveSpeed = 0.06;
+let bossProfile = null;
+
+function spawnBoss(id) {
+  const profile = BOSSES[id];
+  if (!profile) return;
+  bossProfile = profile;
+  bossObj = buildBossMesh(profile);
+  bossObj._hp = profile.hp;
+  bossObj._maxHp = profile.hp;
+  bossThrowTimer = profile.throw_rate;
+  bossDir = 1;
+  bossQuipTimer = 180;
+
+  document.getElementById('boss-name').textContent = profile.name;
+  document.getElementById('boss-fill').style.width = '100%';
+  showBossBar();
+  showMsg(profile.name + ' wants a scrap.', 3000);
+}
+
+// ─── ROAD SCROLLING ───────────────────────────────────────────────────────────
+let roadOffset = 0;
+function scrollRoad(speed) {
+  roadOffset = (roadOffset + speed * 0.016) % TILE_LENGTH;
+  tiles.forEach((t, i) => {
+    t.position.z = (i * TILE_LENGTH - roadOffset + ROAD_Z_START) % (TILE_COUNT * TILE_LENGTH) - ROAD_Z_START * 2;
+  });
+  dashTiles.forEach((d, i) => {
+    d.position.z = (i * 5 - roadOffset * 1.5 + 10) % 100 - 50;
+  });
+}
+
+// ─── COLLISION AABB ───────────────────────────────────────────────────────────
+function hitPlayer(pos, hw, hh) {
+  const px = playerGroup.position.x, pz = playerGroup.position.z;
+  return Math.abs(pos.x - px) < (hw + 0.7) && Math.abs(pos.z - pz) < (hh + 1.1);
+}
+
+// ─── MAIN LOOP ────────────────────────────────────────────────────────────────
+let lastTime = performance.now();
+let parryAvail = false;
+
+function loop() {
+  requestAnimationFrame(loop);
+  const now = performance.now();
+  const dt = Math.min((now - lastTime) / 1000, 0.05);
+  lastTime = now;
+
+  if (G.state !== 'playing' || G.devOpen) {
+    // Just render
+    neonBlue.intensity = 1.5 + Math.sin(now * 0.003) * 0.5;
+    renderer.render(scene, camera);
+    return;
+  }
+
+  G.frame++;
+  G.timer += dt;
+
+  // ── Player movement
+  const spd = 7 * dt * 60;
+  boostActive = keys['Space'];
+  if (keys['KeyA'] || keys['ArrowLeft'])  playerPos.x -= spd * dt * 60 * dt;
+  if (keys['KeyD'] || keys['ArrowRight']) playerPos.x += spd * dt * 60 * dt;
+  if (keys['KeyW'] || keys['ArrowUp'])    playerPos.z -= spd * dt * 60 * dt;
+  if (keys['KeyS'] || keys['ArrowDown'])  playerPos.z += spd * dt * 60 * dt;
+
+  playerPos.x = Math.max(PLAYER_BOUNDS.xMin, Math.min(PLAYER_BOUNDS.xMax, playerPos.x));
+  playerPos.z = Math.max(PLAYER_BOUNDS.zMin, Math.min(PLAYER_BOUNDS.zMax, playerPos.z));
+
+  // Tilt on horizontal move
+  const targetTilt = ((keys['KeyA'] || keys['ArrowLeft']) ? 1 : 0) - ((keys['KeyD'] || keys['ArrowRight']) ? 1 : 0);
+  playerTilt += (targetTilt * 0.35 - playerTilt) * 0.12;
+  playerGroup.rotation.z = playerTilt;
+  playerGroup.position.set(playerPos.x, 0.2, playerPos.z);
+
+  // Engine pulse
+  engineLight.intensity = 2 + Math.sin(now * 0.01) * 0.8 + (boostActive ? 3 : 0);
+
+  // ── Scroll speed
+  let scroll = G.settings.scroll_speed + Math.min(G.timer * 0.025, 2.5) + G.speedBonus;
+  if (boostActive) scroll += 3.5;
+  scrollRoad(scroll);
+  G.score += scroll * 0.05 * dt * 60;
+
+  // ── Spawn
+  const BR = G.settings.block_rate;
+  const CR = G.settings.core_rate;
+  if (G.frame % BR === 0) hazards.push(makeCubeHazard(scroll * 0.7));
+  if (G.frame % CR === 0) coresList.push(makeCore(scroll * 0.65));
+  if ((G.settings === DIFFICULTIES.hard || G.settings === DIFFICULTIES.nightmare) && G.frame % 130 === 0) {
+    lasers.push(makeLaserWall(scroll * 0.6));
+  }
+
+  // ── Boss spawn
+  if (G.level.boss && !bossObj && G.timer > 3) {
+    spawnBoss(G.level.boss);
+  }
+
+  // ── Update hazards
+  for (let i = hazards.length - 1; i >= 0; i--) {
+    const h = hazards[i];
+    h.mesh.position.z += h.vz * dt * 0.7;
+    h.mesh.rotation.x += 0.02;
+    h.mesh.rotation.y += 0.015;
+    if (hitPlayer(h.mesh.position, 0.75, 0.75)) {
+      G.takeDamage(G.settings.damage);
+      scene.remove(h.mesh);
+      hazards.splice(i, 1);
+    } else if (h.mesh.position.z > 14) {
+      scene.remove(h.mesh);
+      hazards.splice(i, 1);
+    }
+  }
+
+  // ── Update cores
+  for (let i = coresList.length - 1; i >= 0; i--) {
+    const c = coresList[i];
+    c.mesh.position.z += c.speed * dt * 0.7;
+    c.mesh.rotation.y += 0.04;
+    c.mesh.rotation.x += 0.02;
+    const scale = 1 + Math.sin(now * 0.005 + i) * 0.08;
+    c.mesh.scale.set(scale, scale, scale);
+    if (hitPlayer(c.mesh.position, 0.65, 0.65)) {
+      G.cores++;
+      G.score += 130;
+      G.shield = Math.min(G.maxShield, G.shield + 6);
+      scene.remove(c.mesh);
+      coresList.splice(i, 1);
+      showMsg(`+Core! (${G.cores}/${G.level.cores})`, 900);
+    } else if (c.mesh.position.z > 14) {
+      scene.remove(c.mesh);
+      coresList.splice(i, 1);
+    }
+  }
+
+  // ── Update lasers
+  for (let i = lasers.length - 1; i >= 0; i--) {
+    const l = lasers[i];
+    l.mesh.position.z += l.speed * dt * 0.7;
+    l.mesh.children[0].material.emissiveIntensity = 0.5 + Math.sin(now * 0.02) * 0.5;
+    const hw = l.horizontal ? 8.5 : 0.18;
+    const hd = 0.18;
+    if (hitPlayer(l.mesh.position, hw, hd)) {
+      G.takeDamage(G.settings.damage + 10);
+      scene.remove(l.mesh);
+      lasers.splice(i, 1);
+    } else if (l.mesh.position.z > 14) {
+      scene.remove(l.mesh);
+      lasers.splice(i, 1);
+    }
+  }
+
+  // ── Update boss blocks
+  parryAvail = false;
+  for (let i = bossBlocks.length - 1; i >= 0; i--) {
+    const b = bossBlocks[i];
+    if (b.parried && bossObj) {
+      // Home in on boss
+      const tx = bossObj.position.x, tz = bossObj.position.z;
+      b.mesh.position.x += (tx - b.mesh.position.x) * 0.07;
+      b.mesh.position.z += (tz - b.mesh.position.z) * 0.07;
+      if (Math.abs(b.mesh.position.x - tx) < 1 && Math.abs(b.mesh.position.z - tz) < 1.5) {
+        bossObj._hp -= 28;
+        G.score += 250;
+        scene.remove(b.mesh);
+        bossBlocks.splice(i, 1);
+        showMsg('Direct hit! -28 HP', 1200);
+        continue;
+      }
+    } else if (!b.parried) {
+      b.mesh.position.x += b.vx * dt * 60 * 0.016;
+      b.mesh.position.z += b.vz * dt * 60 * 0.016;
+      b.mesh.rotation.x += 0.03;
+      b.mesh.rotation.y += 0.025;
+
+      // Check parry proximity
+      const dx = b.mesh.position.x - playerGroup.position.x;
+      const dz = b.mesh.position.z - playerGroup.position.z;
+      if (b.purple && Math.sqrt(dx*dx + dz*dz) < 4.5) parryAvail = true;
+
+      // Hit player
+      if (hitPlayer(b.mesh.position, 0.75, 0.75)) {
+        G.takeDamage(bossProfile.damage + (b.purple ? 8 : 0));
+        scene.remove(b.mesh);
+        bossBlocks.splice(i, 1);
+        continue;
+      }
+    }
+
+    if (b.mesh.position.z > 16 || b.mesh.position.z < -60) {
+      scene.remove(b.mesh);
+      bossBlocks.splice(i, 1);
+    }
+  }
+
+  // Parry prompt
+  document.getElementById('parry-prompt').style.display = parryAvail ? 'block' : 'none';
+
+  // ── Boss update
+  if (bossObj) {
+    bossObj.position.x += bossDir * bossMoveSpeed * dt * 60 * 0.7;
+    if (bossObj.position.x > 6.5 || bossObj.position.x < -6.5) bossDir *= -1;
+    bossObj.rotation.y = Math.sin(now * 0.001) * 0.15;
+
+    // Bounce bob
+    bossObj.position.y = Math.sin(now * 0.002) * 0.4;
+
+    bossThrowTimer--;
+    if (bossThrowTimer <= 0) {
+      throwBossBlock();
+      bossThrowTimer = bossProfile.throw_rate;
+    }
+
+    // Quips
+    bossQuipTimer--;
+    if (bossQuipTimer <= 0) {
+      const q = bossProfile.quips[Math.floor(Math.random() * bossProfile.quips.length)];
+      showMsg(`${bossProfile.name}: "${q}"`, 2500);
+      bossQuipTimer = 240 + Math.random() * 200;
+    }
+
+    // Update HP bar
+    const hpPct = Math.max(0, bossObj._hp / bossObj._maxHp * 100);
+    document.getElementById('boss-fill').style.width = hpPct + '%';
+
+    if (bossObj._hp <= 0) {
+      scene.remove(bossObj);
+      bossObj = null;
+      hideBossBar();
+      G.completeLevel();
+    }
+  }
+
+  // ── Win check (non-boss levels)
+  if (!G.level.boss) {
+    const coresDone = G.cores >= G.level.cores;
+    const timeDone = G.timer >= G.level.time;
+    if (coresDone && timeDone) G.completeLevel();
+  }
+
+  // ── Neon flicker
+  neonBlue.intensity = 1.5 + Math.sin(now * 0.003) * 0.5;
+  neonPink.intensity = 1.2 + Math.cos(now * 0.004) * 0.4;
+  stars.rotation.y = now * 0.00002;
+
+  updateHUD();
+  renderer.render(scene, camera);
+}
+
+function throwBossBlock() {
+  if (!bossObj || !bossProfile) return;
+  const purple = Math.random() < bossProfile.purple_chance;
+  const b = makeCubeHazard(0, purple, true);
+  b.mesh.position.set(bossObj.position.x, 0.75, bossObj.position.z + 2);
+
+  const dx = playerGroup.position.x - b.mesh.position.x;
+  const dz = playerGroup.position.z - b.mesh.position.z;
+  const len = Math.sqrt(dx*dx + dz*dz) || 1;
+  const spd = purple ? 5.5 : 6.8;
+  b.vx = dx / len * spd;
+  b.vz = dz / len * spd;
+  bossBlocks.push(b);
+}
+
+// ─── KICK OFF ─────────────────────────────────────────────────────────────────
+G.showMenu();
+loop();
+</script>
+</body>
+</html>
